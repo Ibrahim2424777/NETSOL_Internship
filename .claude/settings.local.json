@@ -1,0 +1,42 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(uv sync *)",
+      "Bash(uv run *)",
+      "Bash(echo \"started with pid $!\")",
+      "Bash(curl -s -w \"\\\\nHTTP_STATUS:%{http_code}\\\\n\" http://127.0.0.1:8123/api/v1/health)",
+      "Read(//tmp/**)",
+      "Bash(echo \"started pid $!\")",
+      "Bash(cd \"/c/Users/hp/Desktop/Project/backend\")",
+      "Bash(echo \"=== /auth/me with valid access token ===\")",
+      "Bash(curl -s -w '\\\\nHTTP_STATUS:%{http_code}\\\\n' -H 'Authorization: Bearer __TRACKED_VAR__' http://127.0.0.1:8123/api/v1/auth/me)",
+      "Bash(echo \"=== /auth/refresh with valid refresh cookie ===\")",
+      "Bash(curl -s -i -X POST --cookie refresh_token=__TRACKED_VAR__ http://127.0.0.1:8123/api/v1/auth/refresh)",
+      "Bash(echo \"=== /auth/logout with valid refresh cookie ===\")",
+      "Bash(curl -s -i -X POST --cookie refresh_token=__TRACKED_VAR__ http://127.0.0.1:8123/api/v1/auth/logout)",
+      "Bash(echo \"\")",
+      "Bash(echo \"=== attempting /auth/refresh with the now-logged-out token -> must fail ===\")",
+      "Bash(curl -s -w '\\\\nHTTP_STATUS:%{http_code}\\\\n' -X POST --cookie refresh_token=__TRACKED_VAR__ http://127.0.0.1:8123/api/v1/auth/refresh)",
+      "Bash(netstat -ano)",
+      "Bash(curl -s -o /dev/null -w \"HTTP_STATUS:%{http_code}\\\\n\" http://127.0.0.1:8123/docs)",
+      "Bash(curl -s http://127.0.0.1:8123/openapi.json)",
+      "Bash(echo \"=== POST /chats \\(create\\) ===\")",
+      "Bash(curl -s -w '\\\\nHTTP_STATUS:%{http_code}\\\\n' -X POST http://127.0.0.1:8123/api/v1/chats -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI3NGJkZWU3ZC02N2ExLTQ2NjEtOTQ0MC0zOGQ3M2Q0NGQ5OWIiLCJ0eXBlIjoiYWNjZXNzIiwiaWF0IjoxNzg1ODY3NTY2LCJleHAiOjE3ODU4Njg0NjZ9.JY5vxRGEgSy4mcKglu017aGCe_VyVp5P2DeFrK_0vIQ' -H 'Content-Type: application/json' -d '{\"title\":\"My First Chat\"}')",
+      "Bash(echo \"=== POST /chats/{id}/messages \\(send, streamed\\) ===\")",
+      "Bash(time curl -s -N -X POST http://127.0.0.1:8123/api/v1/chats/b41e0a19-20a4-4ee4-aca3-0792b98aab1a/messages -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI3NGJkZWU3ZC02N2ExLTQ2NjEtOTQ0MC0zOGQ3M2Q0NGQ5OWIiLCJ0eXBlIjoiYWNjZXNzIiwiaWF0IjoxNzg1ODY3NTY2LCJleHAiOjE3ODU4Njg0NjZ9.JY5vxRGEgSy4mcKglu017aGCe_VyVp5P2DeFrK_0vIQ' -H 'Content-Type: application/json' -d '{\"content\":\"In one sentence, what is the capital of Japan?\"}')",
+      "Bash(echo \"=== GET messages after cache clear \\(should fall back to Postgres\\) ===\")",
+      "Bash(curl -s -w '\\\\nHTTP_STATUS:%{http_code}\\\\n' http://127.0.0.1:8123/api/v1/chats/b41e0a19-20a4-4ee4-aca3-0792b98aab1a/messages -H 'Authorization: Bearer __TRACKED_VAR__')",
+      "Bash(echo \"=== User 2 tries GET user 1's chat -> must be 404 ===\")",
+      "Bash(curl -s -w '\\\\nHTTP_STATUS:%{http_code}\\\\n' http://127.0.0.1:8123/api/v1/chats/b41e0a19-20a4-4ee4-aca3-0792b98aab1a -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJiMzY2NzdlMC05NjUxLTRlMDItYTJmNi0zZTRjOTIwY2JhODAiLCJ0eXBlIjoiYWNjZXNzIiwiaWF0IjoxNzg1ODY3NzM4LCJleHAiOjE3ODU4Njg2Mzh9.mVZ1gQ8JJuvzPrDqH1s4cyPsZFyNBTff5b51d8lwmJQ')",
+      "Bash(echo \"=== User 2 tries GET user 1's messages -> must be 404 ===\")",
+      "Bash(curl -s -w '\\\\nHTTP_STATUS:%{http_code}\\\\n' http://127.0.0.1:8123/api/v1/chats/b41e0a19-20a4-4ee4-aca3-0792b98aab1a/messages -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJiMzY2NzdlMC05NjUxLTRlMDItYTJmNi0zZTRjOTIwY2JhODAiLCJ0eXBlIjoiYWNjZXNzIiwiaWF0IjoxNzg1ODY3NzM4LCJleHAiOjE3ODU4Njg2Mzh9.mVZ1gQ8JJuvzPrDqH1s4cyPsZFyNBTff5b51d8lwmJQ')",
+      "Bash(echo \"=== User 2 tries to SEND a message into user 1's chat -> must be 404 ===\")",
+      "Bash(echo \"=== Owner deletes their own chat ===\")",
+      "Bash(curl -s -i -X DELETE http://127.0.0.1:8123/api/v1/chats/b41e0a19-20a4-4ee4-aca3-0792b98aab1a -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI3NGJkZWU3ZC02N2ExLTQ2NjEtOTQ0MC0zOGQ3M2Q0NGQ5OWIiLCJ0eXBlIjoiYWNjZXNzIiwiaWF0IjoxNzg1ODY3NTY2LCJleHAiOjE3ODU4Njg0NjZ9.JY5vxRGEgSy4mcKglu017aGCe_VyVp5P2DeFrK_0vIQ')",
+      "Bash(echo \"=== GET the deleted chat -> must be 404 now ===\")",
+      "Bash(curl -s -w '\\\\nHTTP_STATUS:%{http_code}\\\\n' http://127.0.0.1:8123/api/v1/chats/b41e0a19-20a4-4ee4-aca3-0792b98aab1a -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI3NGJkZWU3ZC02N2ExLTQ2NjEtOTQ0MC0zOGQ3M2Q0NGQ5OWIiLCJ0eXBlIjoiYWNjZXNzIiwiaWF0IjoxNzg1ODY3NTY2LCJleHAiOjE3ODU4Njg0NjZ9.JY5vxRGEgSy4mcKglu017aGCe_VyVp5P2DeFrK_0vIQ')",
+      "Bash(curl -s -w \"\\\\nHTTP_STATUS:%{http_code}\\\\n\" http://127.0.0.1:8123/api/v1/chats)",
+      "Bash(npm --version)"
+    ]
+  }
+}

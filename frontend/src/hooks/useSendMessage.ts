@@ -1,0 +1,105 @@
+import { useQueryClient } from '@tanstack/react-query';
+import { useCallback, useRef, useState } from 'react';
+
+import { streamChatMessage } from '../services/chatStream';
+import type { Message } from '../types';
+import { chatKeys, messageKeys } from './queryKeys';
+
+// A stable placeholder id for the assistant's in-progress reply, so it can
+// be found and replaced (by onDone) or removed (on error) in the cache.
+// Only one send can be in flight per chat at a time - the composer disables
+// itself while isStreaming is true - so this doesn't need to be unique
+// beyond that. Exported so callers (ChatPage) can tell "streaming, but no
+// content yet" (show a loading indicator) apart from "streaming, draft
+// bubble already visible" without duplicating this string.
+export const DRAFT_MESSAGE_ID = 'assistant-draft';
+
+export function useSendMessage(chatId: string) {
+  const queryClient = useQueryClient();
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  const appendMessage = useCallback(
+    (message: Message) => {
+      queryClient.setQueryData<Message[]>(messageKeys.list(chatId), (old = []) => [...old, message]);
+    },
+    [chatId, queryClient],
+  );
+
+  const upsertDraft = useCallback(
+    (content: string) => {
+      queryClient.setQueryData<Message[]>(messageKeys.list(chatId), (old = []) => {
+        const withoutDraft = old.filter((m) => m.id !== DRAFT_MESSAGE_ID);
+        const draft: Message = {
+          id: DRAFT_MESSAGE_ID,
+          chat_id: chatId,
+          role: 'assistant',
+          content,
+          timestamp: new Date().toISOString(),
+        };
+        return [...withoutDraft, draft];
+      });
+    },
+    [chatId, queryClient],
+  );
+
+  const removeDraft = useCallback(() => {
+    queryClient.setQueryData<Message[]>(messageKeys.list(chatId), (old = []) =>
+      old.filter((m) => m.id !== DRAFT_MESSAGE_ID),
+    );
+  }, [chatId, queryClient]);
+
+  const sendMessage = useCallback(
+    async (content: string) => {
+      setError(null);
+      setIsStreaming(true);
+      let draft = '';
+      const controller = new AbortController();
+      abortRef.current = controller;
+
+      try {
+        await streamChatMessage(
+          chatId,
+          content,
+          {
+            onUserMessage: (event) => appendMessage(event.message),
+            onChunk: (event) => {
+              draft += event.content;
+              upsertDraft(draft);
+            },
+            onDone: (event) => {
+              queryClient.setQueryData<Message[]>(messageKeys.list(chatId), (old = []) => [
+                ...old.filter((m) => m.id !== DRAFT_MESSAGE_ID),
+                event.message,
+              ]);
+              // The chat's title/updated_at may have changed (sidebar
+              // ordering bumps on every message) - refetch the list.
+              queryClient.invalidateQueries({ queryKey: chatKeys.list() });
+            },
+            onError: (detail) => {
+              removeDraft();
+              setError(detail);
+            },
+          },
+          controller.signal,
+        );
+      } catch (err) {
+        if (!controller.signal.aborted) {
+          removeDraft();
+          setError(err instanceof Error ? err.message : 'Something went wrong sending your message.');
+        }
+      } finally {
+        setIsStreaming(false);
+        abortRef.current = null;
+      }
+    },
+    [chatId, appendMessage, upsertDraft, removeDraft, queryClient],
+  );
+
+  const cancel = useCallback(() => {
+    abortRef.current?.abort();
+  }, []);
+
+  return { sendMessage, cancel, isStreaming, error };
+}
