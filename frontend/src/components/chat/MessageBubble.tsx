@@ -1,6 +1,7 @@
 import { Suspense, lazy, memo } from 'react';
 
 import type { Message } from '../../types';
+import { DocumentIcon } from '../icons';
 
 // Lazy-loaded: react-markdown + remark-gfm + react-syntax-highlighter (with
 // its language grammars) are the single heaviest dependency in this app,
@@ -16,11 +17,13 @@ interface MessageBubbleProps {
   isStreaming?: boolean;
 }
 
-// User messages render as plain text (white-space: pre-wrap preserves the
-// line breaks they actually typed). Assistant messages render as Markdown -
-// that's the convention this mirrors (ChatGPT/Claude etc.): a model is
-// likely to format its replies, a human typing a chat message generally
-// isn't trying to write Markdown.
+// User messages render as a right-aligned gradient bubble (a human typing a
+// chat message generally isn't trying to write Markdown, so plain text with
+// preserved line breaks is enough). Assistant messages render left-aligned
+// as flowing content with a small avatar/label instead of a boxed bubble -
+// the reply is the primary content, not something competing visually with
+// the user's own messages - mirroring the convention most modern AI chat
+// products (ChatGPT/Claude) use.
 //
 // Wrapped in memo(): during streaming, useSendMessage.ts replaces the whole
 // messages array on every chunk, but only the in-progress draft message's
@@ -31,34 +34,42 @@ interface MessageBubbleProps {
 function MessageBubble({ message, isStreaming = false }: MessageBubbleProps) {
   const isUser = message.role === 'user';
 
-  return (
-    <div className={`d-flex mb-3 ${isUser ? 'justify-content-end' : 'justify-content-start'}`}>
-      <div
-        className={`message-bubble px-3 py-2 rounded-3 ${isUser ? 'bg-primary text-white' : 'bg-body-secondary'}`}
-        style={{ wordBreak: 'break-word' }}
-      >
-        {isUser ? (
+  if (isUser) {
+    return (
+      <div className="d-flex justify-content-end mb-4 message-enter">
+        <div className="message-bubble message-bubble-user px-3 py-2">
           <span style={{ whiteSpace: 'pre-wrap' }}>{message.content}</span>
-        ) : (
-          <>
-            <Suspense fallback={<span style={{ whiteSpace: 'pre-wrap' }}>{message.content}</span>}>
-              <MarkdownMessage content={message.content} />
-            </Suspense>
-            {isStreaming && <span className="streaming-cursor" aria-hidden="true" />}
-            {!isStreaming && message.sources && message.sources.length > 0 && (
-              <div className="small text-body-secondary mt-2 border-top pt-1">
-                Sources used:
-                <ul className="mb-0 ps-3">
-                  {message.sources.map((s, i) => (
-                    <li key={i}>
-                      {s.source}
-                      {s.page != null && ` (p. ${s.page})`}
-                    </li>
-                  ))}
-                </ul>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-4 message-enter" style={{ maxWidth: '75ch' }}>
+      <div className="d-flex align-items-center gap-2 mb-2">
+        <span className="assistant-avatar d-inline-flex align-items-center justify-content-center" aria-hidden="true">
+          ✦
+        </span>
+        <span className="small fw-medium text-secondary">Assistant</span>
+      </div>
+      <div className="message-bubble-assistant ps-1">
+        <Suspense fallback={<span style={{ whiteSpace: 'pre-wrap' }}>{message.content}</span>}>
+          <MarkdownMessage content={message.content} />
+        </Suspense>
+        {isStreaming && <span className="streaming-cursor" aria-hidden="true" />}
+        {!isStreaming && message.sources && message.sources.length > 0 && (
+          <div className="sources-panel mt-3 pt-2">
+            <div className="sources-panel-title mb-1">Sources</div>
+            {message.sources.map((s, i) => (
+              <div className="source-chip" key={i}>
+                <DocumentIcon className="flex-shrink-0" />
+                <span>
+                  {s.source}
+                  {s.page != null && <span className="text-muted"> · p. {s.page}</span>}
+                </span>
               </div>
-            )}
-          </>
+            ))}
+          </div>
         )}
       </div>
     </div>

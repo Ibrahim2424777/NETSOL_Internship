@@ -1,6 +1,3 @@
-import Container from 'react-bootstrap/Container';
-import Nav from 'react-bootstrap/Nav';
-import Navbar from 'react-bootstrap/Navbar';
 import { Link, Outlet } from 'react-router-dom';
 
 // Shared chrome for public pages (Landing, Login, 404): a simple header
@@ -8,18 +5,17 @@ import { Link, Outlet } from 'react-router-dom';
 export default function PublicLayout() {
   return (
     <div className="d-flex flex-column min-vh-100">
-      <Navbar bg="dark" data-bs-theme="dark">
-        <Container>
-          <Navbar.Brand as={Link} to="/">
-            AI Chatbot
-          </Navbar.Brand>
-          <Nav className="ms-auto">
-            <Nav.Link as={Link} to="/login">
-              Sign in
-            </Nav.Link>
-          </Nav>
-        </Container>
-      </Navbar>
+      <header className="chat-header d-flex align-items-center px-3 py-2 flex-shrink-0">
+        <Link to="/" className="d-flex align-items-center gap-2 text-decoration-none">
+          <span className="brand-mark" aria-hidden="true">
+            ✦
+          </span>
+          <span className="fw-semibold text-body">My AI</span>
+        </Link>
+        <Link to="/login" className="btn btn-sm btn-outline-secondary ms-auto">
+          Sign in
+        </Link>
+      </header>
       <div className="flex-grow-1 d-flex flex-column">
         <Outlet />
       </div>

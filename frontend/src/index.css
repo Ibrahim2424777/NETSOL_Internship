@@ -1,3 +1,88 @@
+/* ==========================================================================
+   Design tokens (Phase 12.5)
+
+   Scoped to `:root[data-bs-theme="dark"]` (matches <html data-bs-theme="dark">
+   in index.html) with higher specificity than Bootstrap's own
+   `[data-bs-theme=dark]` rules, so these override Bootstrap's generic dark
+   palette rather than fighting it. Every existing `bg-body-secondary`,
+   `text-secondary`, `border`, `bg-primary`, etc. utility class already used
+   throughout the app picks these up automatically, since Bootstrap's own
+   utilities are themselves built on these same CSS variables - this is what
+   reskins the whole app without editing every component that uses them.
+   ========================================================================== */
+:root[data-bs-theme='dark'] {
+  color-scheme: dark;
+
+  /* App-specific tokens - used directly in custom CSS below/in components,
+     not aliased through Bootstrap. */
+  --app-bg: #0a0c12;
+  --app-surface: #12141d;
+  --app-surface-2: #171a26;
+  --app-surface-hover: #1e2230;
+  --app-surface-active: #242940;
+  --app-border: #262a3a;
+  --app-border-strong: #333850;
+  --app-text-primary: #eef0f6;
+  --app-text-secondary: #9ba1b8;
+  --app-text-muted: #6b7188;
+  --app-accent: #7c6cf5;
+  --app-accent-2: #5b8cff;
+  --app-accent-gradient: linear-gradient(135deg, #7c6cf5 0%, #5b8cff 100%);
+  --app-accent-gradient-soft: linear-gradient(135deg, rgba(124, 108, 245, 0.16) 0%, rgba(91, 140, 255, 0.16) 100%);
+  --app-radius-sm: 8px;
+  --app-radius-md: 12px;
+  --app-radius-lg: 18px;
+  --app-radius-pill: 999px;
+  --app-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --app-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --app-shadow-glow: 0 0 0 3px rgba(124, 108, 245, 0.25);
+  --app-transition-fast: 150ms ease;
+  --app-transition: 220ms ease;
+  --app-transition-slow: 300ms ease;
+
+  /* Bootstrap variable overrides - this block is the actual reskin. */
+  --bs-body-bg: var(--app-bg);
+  --bs-body-color: var(--app-text-primary);
+  --bs-body-color-rgb: 238, 240, 246;
+  --bs-secondary-bg: var(--app-surface-2);
+  --bs-tertiary-bg: var(--app-surface);
+  --bs-border-color: var(--app-border);
+  --bs-border-color-translucent: var(--app-border);
+  --bs-secondary-color: var(--app-text-secondary);
+  --bs-tertiary-color: var(--app-text-muted);
+  --bs-primary: var(--app-accent);
+  --bs-primary-rgb: 124, 108, 245;
+  --bs-primary-text-emphasis: #b3a9ff;
+  --bs-primary-bg-subtle: #211d3d;
+  --bs-primary-border-subtle: #383158;
+  --bs-link-color: var(--app-accent-2);
+  --bs-link-hover-color: var(--app-accent);
+  --bs-link-color-rgb: 91, 140, 255;
+  --bs-danger: #f0576b;
+  --bs-emphasis-color: var(--app-text-primary);
+
+}
+
+/* Dropdown/Modal (react-bootstrap): unlike --bs-body-bg etc., these
+   components redeclare their own bg/link variables LOCALLY on their own
+   selector (.dropdown-menu { --bs-dropdown-bg: var(--bs-body-bg); ... }),
+   not just once on :root - a locally-matching declaration always wins the
+   cascade over an inherited one, !important or not, so overriding these at
+   :root has no effect here. They have to be redeclared on the same
+   selectors Bootstrap uses. Without this they'd render at the exact same
+   shade as the page behind them - technically correct/opaque, but with
+   zero visual separation, reading as "flat" rather than "elevated". */
+.dropdown-menu {
+  --bs-dropdown-bg: var(--app-surface-2);
+  --bs-dropdown-border-color: var(--app-border);
+  --bs-dropdown-link-hover-bg: var(--app-surface-hover);
+  --bs-dropdown-link-active-bg: var(--app-accent);
+}
+.modal-content {
+  --bs-modal-bg: var(--app-surface-2);
+  --bs-modal-border-color: var(--app-border);
+}
+
 html,
 body,
 #root {
@@ -6,10 +91,215 @@ body,
 
 body {
   margin: 0;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.01em;
 }
 
-/* Message bubbles (MessageBubble.tsx) - wider on narrow screens, since 75%
-   of a 360px phone viewport leaves very little room for actual text. */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.fw-bold {
+  letter-spacing: -0.02em;
+}
+
+/* Visible, on-brand focus ring everywhere (keyboard nav) - Bootstrap's
+   default focus styles still apply as a fallback for form controls, this
+   just makes the accent color consistent for plain buttons/links/custom
+   elements too. */
+a:focus-visible,
+button:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--app-accent-2);
+  outline-offset: 2px;
+  border-radius: var(--app-radius-sm);
+}
+
+/* Slim, subtle scrollbars - the default OS scrollbar looks out of place
+   against a custom dark surface. Firefox + WebKit only; other browsers
+   just keep their native scrollbar, which is harmless. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--app-border-strong) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--app-border-strong);
+  border-radius: var(--app-radius-pill);
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Bootstrap's .btn-primary hardcodes a literal hex background in its
+   compiled CSS (--bs-btn-bg: #0d6efd) rather than referencing --bs-primary,
+   so overriding that root variable alone doesn't reskin it - this class is
+   used instead wherever a prominent, on-brand call-to-action button is
+   needed (landing page, empty states, error fallback). */
+.btn-gradient {
+  border: none;
+  background: var(--app-accent-gradient);
+  color: #fff;
+  transition: transform var(--app-transition-fast), box-shadow var(--app-transition-fast);
+}
+.btn-gradient:hover,
+.btn-gradient:focus {
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: var(--app-shadow-md);
+}
+.btn-gradient:active {
+  color: #fff;
+}
+
+.gradient-text {
+  background: var(--app-accent-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* The "✦" brand mark used in the sidebar, headers, and empty state -
+   a single reusable accent glyph rather than a real logo asset. */
+.brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6em;
+  height: 1.6em;
+  border-radius: var(--app-radius-sm);
+  background: var(--app-accent-gradient);
+  color: #fff;
+  font-size: 0.95em;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   App shell / sidebar
+   ========================================================================== */
+
+/* Wraps ChatSidebar so its width can be animated independently of the
+   Offcanvas component's own mobile-drawer show/hide logic (untouched) -
+   only applies the width constraint at >=768px, where the sidebar renders
+   as a normal in-flow element instead of an overlay. */
+.sidebar-collapse-wrapper {
+  flex-shrink: 0;
+  overflow: hidden;
+}
+@media (min-width: 768px) {
+  .sidebar-collapse-wrapper {
+    width: 280px;
+    transition: width var(--app-transition-slow);
+  }
+  .sidebar-collapse-wrapper.is-collapsed {
+    width: 0;
+  }
+}
+
+.app-sidebar {
+  background: var(--app-surface);
+  width: 280px;
+}
+
+.sidebar-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--app-radius-sm);
+  border: none;
+  background: transparent;
+  color: var(--app-text-secondary);
+  transition: background var(--app-transition-fast), color var(--app-transition-fast);
+}
+.sidebar-icon-btn:hover {
+  background: var(--app-surface-hover);
+  color: var(--app-text-primary);
+}
+
+.new-chat-btn {
+  border-radius: var(--app-radius-md);
+  border: 1px solid var(--app-border);
+  background: var(--app-surface-2);
+  color: var(--app-text-primary);
+  font-weight: 500;
+  transition: background var(--app-transition-fast), border-color var(--app-transition-fast);
+}
+.new-chat-btn:hover:not(:disabled) {
+  background: var(--app-surface-hover);
+  border-color: var(--app-border-strong);
+  color: var(--app-text-primary);
+}
+
+.chat-group-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--app-text-muted);
+  padding: 0.5rem 0.5rem 0.25rem;
+}
+
+.chat-item {
+  border-radius: var(--app-radius-md);
+  transition: background var(--app-transition-fast);
+  position: relative;
+}
+.chat-item:hover {
+  background: var(--app-surface-hover);
+}
+.chat-item.active {
+  background: var(--app-accent-gradient-soft);
+}
+.chat-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 20%;
+  bottom: 20%;
+  width: 3px;
+  border-radius: var(--app-radius-pill);
+  background: var(--app-accent-gradient);
+}
+.chat-item-link {
+  color: var(--app-text-secondary);
+  font-size: 0.9rem;
+}
+.chat-item.active .chat-item-link {
+  color: var(--app-text-primary);
+}
+.chat-item-menu-btn {
+  opacity: 0;
+  transition: opacity var(--app-transition-fast);
+}
+.chat-item:hover .chat-item-menu-btn,
+.chat-item-menu-btn.show {
+  opacity: 1;
+}
+
+/* ==========================================================================
+   Chat header
+   ========================================================================== */
+.chat-header {
+  border-bottom: 1px solid var(--app-border);
+  background: var(--app-bg);
+}
+
+/* ==========================================================================
+   Messages
+   ========================================================================== */
 .message-bubble {
   max-width: 92%;
 }
@@ -19,7 +309,46 @@ body {
   }
 }
 
-/* Markdown content inside assistant message bubbles */
+.message-bubble-user {
+  background: var(--app-accent-gradient);
+  color: #fff;
+  border-radius: var(--app-radius-lg) var(--app-radius-lg) 4px var(--app-radius-lg);
+  box-shadow: var(--app-shadow-sm);
+}
+
+.message-bubble-assistant {
+  color: var(--app-text-primary);
+  line-height: 1.65;
+}
+
+.assistant-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--app-radius-sm);
+  background: var(--app-accent-gradient);
+  color: #fff;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+@keyframes message-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.message-enter {
+  animation: message-in var(--app-transition) both;
+}
+
+/* Markdown content inside assistant messages */
+.markdown-content {
+  font-size: 0.95rem;
+}
 .markdown-content > *:first-child {
   margin-top: 0;
 }
@@ -27,54 +356,95 @@ body {
   margin-bottom: 0;
 }
 .markdown-content p {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.65rem;
 }
 .markdown-content ul,
 .markdown-content ol {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.65rem;
   padding-left: 1.5rem;
+}
+.markdown-content li {
+  margin-bottom: 0.15rem;
 }
 .markdown-content pre {
   margin: 0;
 }
 .markdown-content code:not(pre code) {
-  background: var(--bs-secondary-bg);
-  border-radius: 0.25rem;
-  padding: 0.1rem 0.35rem;
-  font-size: 0.875em;
+  background: var(--app-surface-2);
+  border: 1px solid var(--app-border);
+  border-radius: 0.3rem;
+  padding: 0.1rem 0.4rem;
+  font-size: 0.85em;
 }
 .markdown-content table {
   width: 100%;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.65rem;
   border-collapse: collapse;
+  font-size: 0.9em;
 }
 .markdown-content th,
 .markdown-content td {
-  border: 1px solid var(--bs-border-color);
-  padding: 0.375rem 0.5rem;
+  border: 1px solid var(--app-border);
+  padding: 0.4rem 0.6rem;
+}
+.markdown-content th {
+  background: var(--app-surface-2);
 }
 .markdown-content blockquote {
-  border-left: 3px solid var(--bs-border-color);
-  padding-left: 0.75rem;
-  color: var(--bs-secondary-color);
-  margin: 0 0 0.5rem;
+  border-left: 3px solid var(--app-accent);
+  padding-left: 0.85rem;
+  color: var(--app-text-secondary);
+  margin: 0 0 0.65rem;
+}
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3 {
+  margin-top: 1.1em;
+  margin-bottom: 0.5em;
+}
+.markdown-content > h1:first-child,
+.markdown-content > h2:first-child,
+.markdown-content > h3:first-child {
+  margin-top: 0;
 }
 
-/* Code block chrome (CodeBlock.tsx) - a dark header bar sitting on top of
-   the syntax highlighter's own dark background, regardless of page theme,
-   matching the near-universal "dark code block on a light page" chat
-   convention. */
+/* Code block chrome (CodeBlock.tsx) - a dark header bar on top of the
+   syntax highlighter's own dark background, regardless of page theme,
+   matching the near-universal "dark code block" chat convention. */
+.code-block {
+  border: 1px solid var(--app-border);
+}
 .code-block-header {
-  background: hsl(220, 13%, 14%);
+  background: #0d0f16;
+  border-bottom: 1px solid var(--app-border);
 }
 
-/* Typing indicator: three dots pulsing in sequence (MessageList.tsx) */
+/* Source attribution (RAG, Phase 12) */
+.sources-panel {
+  border-top: 1px solid var(--app-border);
+  color: var(--app-text-secondary);
+}
+.sources-panel-title {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--app-text-muted);
+}
+.source-chip {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  padding: 0.2rem 0;
+}
+
+/* Typing indicator: three dots pulsing in sequence (TypingIndicator.tsx) */
 @keyframes typing-dot-bounce {
   0%,
   60%,
   100% {
     transform: translateY(0);
-    opacity: 0.5;
+    opacity: 0.4;
   }
   30% {
     transform: translateY(-4px);
@@ -86,7 +456,7 @@ body {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: currentColor;
+  background: var(--app-accent-2);
   animation: typing-dot-bounce 1.2s infinite ease-in-out;
 }
 .typing-dot:nth-child(2) {
@@ -96,8 +466,7 @@ body {
   animation-delay: 0.3s;
 }
 
-/* Blinking cursor appended to an assistant message while it's still
-   streaming in (MessageBubble.tsx) */
+/* Blinking cursor appended to an assistant message while streaming */
 @keyframes blink-cursor {
   0%,
   49% {
@@ -114,6 +483,140 @@ body {
   height: 1em;
   margin-left: 2px;
   vertical-align: text-bottom;
-  background: currentColor;
+  background: var(--app-accent-2);
   animation: blink-cursor 1s step-start infinite;
+}
+
+/* ==========================================================================
+   Empty chat state
+   ========================================================================== */
+.empty-state-mark {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--app-radius-lg);
+  background: var(--app-accent-gradient);
+  color: #fff;
+  font-size: 1.6rem;
+  box-shadow: var(--app-shadow-md);
+}
+
+/* ==========================================================================
+   Message composer
+   ========================================================================== */
+.composer-shell {
+  border-top: 1px solid var(--app-border);
+  background: var(--app-bg);
+}
+
+.composer {
+  background: var(--app-surface-2);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-lg);
+  padding: 0.5rem 0.5rem 0.5rem 1rem;
+  transition: border-color var(--app-transition-fast), box-shadow var(--app-transition-fast);
+}
+.composer:focus-within {
+  border-color: var(--app-accent);
+  box-shadow: var(--app-shadow-glow);
+}
+
+.composer-textarea {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: var(--app-text-primary) !important;
+  resize: none;
+  max-height: 200px;
+  padding: 0.4rem 0 !important;
+}
+.composer-textarea::placeholder {
+  color: var(--app-text-muted);
+}
+.composer-textarea:focus {
+  outline: none;
+}
+
+.composer-send-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: var(--app-accent-gradient);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: opacity var(--app-transition-fast), transform var(--app-transition-fast);
+}
+.composer-send-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+.composer-send-btn:disabled {
+  opacity: 0.4;
+}
+
+/* ==========================================================================
+   Auth pages (Login/Landing)
+   ========================================================================== */
+.auth-backdrop {
+  position: relative;
+  overflow: hidden;
+}
+.auth-backdrop::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(600px circle at 15% 20%, rgba(124, 108, 245, 0.16), transparent 60%),
+    radial-gradient(500px circle at 85% 75%, rgba(91, 140, 255, 0.14), transparent 60%);
+  pointer-events: none;
+}
+.auth-card {
+  position: relative;
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-lg);
+  box-shadow: var(--app-shadow-md);
+}
+
+.google-btn {
+  border-radius: var(--app-radius-md) !important;
+  background: #fff !important;
+  border: 1px solid var(--app-border) !important;
+  color: #1f2430 !important;
+  font-weight: 500;
+  transition: transform var(--app-transition-fast), box-shadow var(--app-transition-fast);
+}
+.google-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--app-shadow-md);
+}
+
+.feature-card {
+  height: 100%;
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-lg);
+  transition: border-color var(--app-transition-fast), transform var(--app-transition-fast);
+}
+.feature-card:hover {
+  border-color: var(--app-border-strong);
+  transform: translateY(-2px);
+}
+.feature-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--app-radius-md);
+  background: var(--app-accent-gradient-soft);
+  color: var(--app-accent-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

@@ -118,5 +118,9 @@ export function useSendMessage(chatId: string) {
     abortRef.current?.abort();
   }, []);
 
-  return { sendMessage, cancel, isStreaming, error };
+  const dismissError = useCallback(() => {
+    setError(null);
+  }, []);
+
+  return { sendMessage, cancel, isStreaming, error, dismissError };
 }

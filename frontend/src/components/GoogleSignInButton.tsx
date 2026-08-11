@@ -31,10 +31,10 @@ export default function GoogleSignInButton({ onClick }: { onClick: () => void })
       variant="light"
       size="lg"
       onClick={onClick}
-      className="d-flex align-items-center justify-content-center gap-2 border shadow-sm"
+      className="google-btn w-100 d-flex align-items-center justify-content-center gap-2"
     >
       <GoogleMark />
-      <span>Sign in with Google</span>
+      <span>Continue with Google</span>
     </Button>
   );
 }

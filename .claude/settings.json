@@ -78,7 +78,22 @@
       "Bash(sleep 15 && cat \"/c/Users/hp/AppData/Local/Temp/claude/c--Users-hp-Desktop-Project/58aa447b-ea4d-4e0b-acff-b9d1a1ad2b49/tasks/bb4z9f2hd.output\" 2>&1)",
       "Bash(GEMINI_API_KEY=invalid-key-for-testing-failure uv run uvicorn app.main:app --port 8000 --loop app.core.event_loop:event_loop_factory)",
       "Bash(sleep 6 && cat \"/c/Users/hp/AppData/Local/Temp/claude/c--Users-hp-Desktop-Project/58aa447b-ea4d-4e0b-acff-b9d1a1ad2b49/scratchpad/server_retract_test.log\")",
-      "Bash(powershell -Command \"Stop-Process -Id 4596 -Force -ErrorAction SilentlyContinue\")"
+      "Bash(powershell -Command \"Stop-Process -Id 4596 -Force -ErrorAction SilentlyContinue\")",
+      "Bash(chromium-cli --help)",
+      "Bash(npx --yes playwright install chromium)",
+      "Bash(mkdir -p \"/c/Users/hp/AppData/Local/Temp/claude/c--Users-hp-Desktop-Project/58aa447b-ea4d-4e0b-acff-b9d1a1ad2b49/scratchpad/pw-check\")",
+      "Read(//c/Users/hp/AppData/Local/Temp/claude/c--Users-hp-Desktop-Project/58aa447b-ea4d-4e0b-acff-b9d1a1ad2b49/scratchpad/pw-check/**)",
+      "Bash(echo \"EXIT CODE: $?\")",
+      "Read(//c/Users/hp/AppData/Local/ms-playwright/**)",
+      "PowerShell(Get-CimInstance Win32_Process -Filter \"ProcessId = 10732\")",
+      "PowerShell(Get-CimInstance Win32_Process -Filter \"ProcessId = 13156\")",
+      "Bash(curl -sf http://localhost:5173)",
+      "Bash(curl -sf http://localhost:8000/api/v1/../docs)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:8000/docs)",
+      "Bash(node check_chat.js)",
+      "Bash(ls -la \"/c/Users/hp/AppData/Local/Temp/claude/c--Users-hp-Desktop-Project/58aa447b-ea4d-4e0b-acff-b9d1a1ad2b49/scratchpad/pw-check/\"*.png)",
+      "Bash(node debug_collapse.js)",
+      "Bash(sleep 15 && cat \"/c/Users/hp/AppData/Local/Temp/claude/c--Users-hp-Desktop-Project/58aa447b-ea4d-4e0b-acff-b9d1a1ad2b49/tasks/bq52gwjhk.output\")"
     ],
     "additionalDirectories": [
       "C:\\Users\\hp\\Desktop\\Project\\backend\\data"

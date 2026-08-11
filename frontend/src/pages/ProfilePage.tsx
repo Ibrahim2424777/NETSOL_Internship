@@ -1,4 +1,3 @@
-import Card from 'react-bootstrap/Card';
 import Container from 'react-bootstrap/Container';
 
 import { useAuth } from '../context/AuthContext';
@@ -18,30 +17,28 @@ export default function ProfilePage() {
 
   return (
     <Container className="py-5" style={{ maxWidth: 480 }}>
-      <Card>
-        <Card.Body className="text-center p-4">
-          {user.profile_picture ? (
-            <img
-              src={user.profile_picture}
-              alt=""
-              width={96}
-              height={96}
-              className="rounded-circle mb-3"
-              referrerPolicy="no-referrer"
-            />
-          ) : (
-            <div
-              className="rounded-circle bg-secondary text-white d-inline-flex align-items-center justify-content-center mb-3"
-              style={{ width: 96, height: 96, fontSize: '2rem' }}
-            >
-              {user.name.charAt(0).toUpperCase()}
-            </div>
-          )}
-          <h4 className="mb-1">{user.name}</h4>
-          <p className="text-secondary mb-3">{user.email}</p>
-          <p className="text-secondary small mb-0">Member since {memberSince}</p>
-        </Card.Body>
-      </Card>
+      <div className="auth-card p-4 text-center">
+        {user.profile_picture ? (
+          <img
+            src={user.profile_picture}
+            alt=""
+            width={88}
+            height={88}
+            className="rounded-circle mb-3"
+            referrerPolicy="no-referrer"
+          />
+        ) : (
+          <div
+            className="rounded-circle text-white d-inline-flex align-items-center justify-content-center mb-3"
+            style={{ width: 88, height: 88, fontSize: '1.8rem', background: 'var(--app-accent-gradient)' }}
+          >
+            {user.name.charAt(0).toUpperCase()}
+          </div>
+        )}
+        <h4 className="mb-1">{user.name}</h4>
+        <p className="text-secondary mb-3">{user.email}</p>
+        <p className="text-secondary small mb-0">Member since {memberSince}</p>
+      </div>
     </Container>
   );
 }

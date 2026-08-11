@@ -7,6 +7,8 @@ import { Link, useNavigate } from 'react-router-dom';
 
 import { useChats, useCreateChat, useDeleteChat, useRenameChat } from '../../hooks/useChats';
 import type { Chat } from '../../types';
+import { groupChatsByDate } from '../../utils/groupChatsByDate';
+import { MoreIcon, PlusIcon } from '../icons';
 import DeleteChatModal from './DeleteChatModal';
 import RenameChatModal from './RenameChatModal';
 
@@ -15,6 +17,8 @@ interface ChatSidebarProps {
   // Below the `md` breakpoint the sidebar becomes a true off-canvas overlay
   // (Offcanvas's `responsive` prop - inline and always visible at md+,
   // overlay controlled by show/onHide below it) - these control that overlay.
+  // Desktop collapse is a separate concern, handled by the width-animated
+  // wrapper in ChatPage.tsx - this component doesn't know about it.
   show: boolean;
   onHide: () => void;
 }
@@ -49,12 +53,14 @@ export default function ChatSidebar({ activeChatId, show, onHide }: ChatSidebarP
     }
   };
 
+  const groups = groupChatsByDate(chats ?? []);
+
   return (
     <Offcanvas
       show={show}
       onHide={onHide}
       responsive="md"
-      className="d-flex flex-column border-end bg-body-tertiary"
+      className="d-flex flex-column app-sidebar border-end"
       style={{ width: 280 }}
     >
       <Offcanvas.Header closeButton className="d-md-none">
@@ -62,8 +68,13 @@ export default function ChatSidebar({ activeChatId, show, onHide }: ChatSidebarP
       </Offcanvas.Header>
 
       <div className="p-2 flex-shrink-0">
-        <Button className="w-100" onClick={handleNewChat} disabled={createChat.isPending}>
-          {createChat.isPending ? <Spinner animation="border" size="sm" /> : '+ New Chat'}
+        <Button
+          className="new-chat-btn w-100 d-flex align-items-center justify-content-center gap-2"
+          onClick={handleNewChat}
+          disabled={createChat.isPending}
+        >
+          {createChat.isPending ? <Spinner animation="border" size="sm" /> : <PlusIcon />}
+          New Chat
         </Button>
       </div>
 
@@ -87,36 +98,19 @@ export default function ChatSidebar({ activeChatId, show, onHide }: ChatSidebarP
           <p className="text-secondary small text-center mt-3">No conversations yet.</p>
         )}
 
-        {chats?.map((chat) => (
-          <div
-            key={chat.id}
-            className={`d-flex align-items-center rounded-2 mb-1 ${
-              chat.id === activeChatId ? 'bg-primary-subtle' : ''
-            }`}
-          >
-            <Link
-              to={`/chat/${chat.id}`}
-              onClick={handleSelectChat}
-              className="flex-grow-1 text-truncate px-2 py-2 text-decoration-none text-body"
-              title={chat.title}
-            >
-              {chat.title}
-            </Link>
-            <Dropdown align="end">
-              <Dropdown.Toggle
-                as="button"
-                className="btn btn-sm btn-link text-secondary text-decoration-none px-2"
-                id={`chat-menu-${chat.id}`}
-              >
-                ⋮
-              </Dropdown.Toggle>
-              <Dropdown.Menu>
-                <Dropdown.Item onClick={() => setChatToRename(chat)}>Rename</Dropdown.Item>
-                <Dropdown.Item className="text-danger" onClick={() => setChatToDelete(chat)}>
-                  Delete
-                </Dropdown.Item>
-              </Dropdown.Menu>
-            </Dropdown>
+        {groups.map((group) => (
+          <div key={group.label} className="mb-1">
+            <div className="chat-group-label">{group.label}</div>
+            {group.chats.map((chat) => (
+              <ChatListItem
+                key={chat.id}
+                chat={chat}
+                active={chat.id === activeChatId}
+                onSelect={handleSelectChat}
+                onRename={() => setChatToRename(chat)}
+                onDelete={() => setChatToDelete(chat)}
+              />
+            ))}
           </div>
         ))}
       </div>
@@ -141,5 +135,50 @@ export default function ChatSidebar({ activeChatId, show, onHide }: ChatSidebarP
         onConfirm={handleConfirmDelete}
       />
     </Offcanvas>
+  );
+}
+
+function ChatListItem({
+  chat,
+  active,
+  onSelect,
+  onRename,
+  onDelete,
+}: {
+  chat: Chat;
+  active: boolean;
+  onSelect: () => void;
+  onRename: () => void;
+  onDelete: () => void;
+}) {
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  return (
+    <div className={`chat-item d-flex align-items-center mb-1 ${active ? 'active' : ''}`}>
+      <Link
+        to={`/chat/${chat.id}`}
+        onClick={onSelect}
+        className="chat-item-link flex-grow-1 text-truncate px-2 py-2 text-decoration-none"
+        title={chat.title}
+      >
+        {chat.title}
+      </Link>
+      <Dropdown align="end" onToggle={setMenuOpen}>
+        <Dropdown.Toggle
+          as="button"
+          className={`btn btn-sm chat-item-menu-btn text-secondary px-2 border-0 bg-transparent ${menuOpen ? 'show' : ''}`}
+          id={`chat-menu-${chat.id}`}
+          aria-label="Chat options"
+        >
+          <MoreIcon />
+        </Dropdown.Toggle>
+        <Dropdown.Menu>
+          <Dropdown.Item onClick={onRename}>Rename</Dropdown.Item>
+          <Dropdown.Item className="text-danger" onClick={onDelete}>
+            Delete
+          </Dropdown.Item>
+        </Dropdown.Menu>
+      </Dropdown>
+    </div>
   );
 }

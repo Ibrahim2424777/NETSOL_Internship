@@ -1,10 +1,13 @@
 export default function TypingIndicator() {
   return (
-    <div className="d-flex justify-content-start mb-3">
-      <div
-        className="px-3 py-2 rounded-3 bg-body-secondary d-flex align-items-center gap-1"
-        aria-label="Assistant is typing"
-      >
+    <div className="mb-4" aria-label="Assistant is typing">
+      <div className="d-flex align-items-center gap-2 mb-2">
+        <span className="assistant-avatar d-inline-flex align-items-center justify-content-center" aria-hidden="true">
+          ✦
+        </span>
+        <span className="small fw-medium text-secondary">Thinking</span>
+      </div>
+      <div className="d-flex align-items-center gap-1 ps-1">
         <span className="typing-dot" />
         <span className="typing-dot" />
         <span className="typing-dot" />

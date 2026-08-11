@@ -36,7 +36,7 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
           <p className="text-secondary mb-0">
             Please refresh the page. If this keeps happening, try signing out and back in.
           </p>
-          <button type="button" className="btn btn-primary" onClick={() => window.location.assign('/')}>
+          <button type="button" className="btn btn-gradient" onClick={() => window.location.assign('/')}>
             Back to home
           </button>
         </div>

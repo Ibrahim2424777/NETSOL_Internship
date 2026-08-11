@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import type { FormEvent, KeyboardEvent } from 'react';
-import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
+
+import { SendIcon } from '../icons';
 
 interface MessageComposerProps {
   onSend: (content: string) => void;
@@ -10,6 +11,17 @@ interface MessageComposerProps {
 
 export default function MessageComposer({ onSend, disabled }: MessageComposerProps) {
   const [value, setValue] = useState('');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-grows with content up to CSS's max-height (200px, then scrolls) -
+  // resetting to 'auto' first is what lets the browser recompute a
+  // *smaller* scrollHeight too, e.g. after deleting several lines of text.
+  useLayoutEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    textarea.style.height = 'auto';
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  }, [value]);
 
   const submit = () => {
     const trimmed = value.trim();
@@ -32,21 +44,27 @@ export default function MessageComposer({ onSend, disabled }: MessageComposerPro
   };
 
   return (
-    <Form onSubmit={handleSubmit} className="border-top p-3 flex-shrink-0">
-      <div className="d-flex gap-2 align-items-end">
+    <Form onSubmit={handleSubmit} className="composer-shell p-3 flex-shrink-0">
+      <div className="composer d-flex align-items-end gap-2">
         <Form.Control
+          ref={textareaRef}
           as="textarea"
           rows={1}
-          placeholder="Message the assistant…"
+          placeholder="Ask anything..."
           value={value}
           disabled={disabled}
           onChange={(event) => setValue(event.target.value)}
           onKeyDown={handleKeyDown}
-          style={{ resize: 'none' }}
+          className="composer-textarea"
         />
-        <Button type="submit" disabled={disabled || !value.trim()}>
-          Send
-        </Button>
+        <button
+          type="submit"
+          className="composer-send-btn"
+          disabled={disabled || !value.trim()}
+          aria-label="Send message"
+        >
+          <SendIcon />
+        </button>
       </div>
     </Form>
   );
