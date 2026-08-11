@@ -55,6 +55,35 @@ class Settings(BaseSettings):
     # once a chat has hundreds of messages in Postgres/the checkpoint.
     MAX_HISTORY_MESSAGES: int = 20
 
+    # --- Document RAG ---
+    # Local, on-disk LanceDB directory - separate storage layer from
+    # Postgres/Redis, survives backend restarts on its own (see
+    # app/services/vector_store_service.py).
+    RAG_VECTOR_DB_PATH: str = "./data/vector_store"
+    # fastembed model id (ONNX, CPU-only, no PyTorch) - free/local, no paid
+    # embedding API. 384-dim, ~130MB, downloaded once and cached by fastembed.
+    RAG_EMBEDDING_MODEL: str = "BAAI/bge-small-en-v1.5"
+    # How many chunks the retriever returns per query - bounds how much
+    # retrieved text gets sent to Gemini on top of conversation history.
+    RAG_TOP_K: int = 4
+    # Minimum cosine similarity (0-1) for a chunk to count as a real match.
+    # LanceDB's top-k search always returns its k nearest neighbors even for
+    # a completely off-topic query, just with a low score - without this
+    # floor, an unrelated question would still get document chunks stuffed
+    # into the prompt and shown as "Sources used". Calibrated empirically
+    # against this project's test document: genuinely relevant queries
+    # scored ~0.76-0.82, off-topic ones ~0.37-0.54 - 0.6 sits cleanly in the
+    # gap. Recalibrate if RAG_EMBEDDING_MODEL changes.
+    RAG_MIN_SCORE: float = 0.6
+    # ~150-200 words: large enough that a chunk usually contains a whole rule
+    # or paragraph from the source document (most facts in a policy-style
+    # document span 2-4 sentences), small enough that RAG_TOP_K chunks stay a
+    # reasonable prompt addition rather than most of a page.
+    RAG_CHUNK_SIZE: int = 800
+    # ~15% of chunk size - enough overlap that a fact split across a chunk
+    # boundary still appears whole in at least one of the two chunks.
+    RAG_CHUNK_OVERLAP: int = 120
+
     # --- Gemini ---
     # Required (no default) - same fail-fast reasoning as the secrets below.
     GEMINI_API_KEY: str

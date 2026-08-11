@@ -18,12 +18,13 @@ class MessageRepository(BaseRepository[Message]):
         content: str,
         id: uuid.UUID | None = None,
         timestamp: datetime | None = None,
+        sources: list[dict] | None = None,
     ) -> Message:
         """id/timestamp are normally left to their model defaults. The
         streaming send-message flow passes them explicitly so the message
         cached in Redis and the row persisted to Postgres are provably the
         same message, not two independently-generated near-duplicates."""
-        message = Message(chat_id=chat_id, role=role, content=content)
+        message = Message(chat_id=chat_id, role=role, content=content, sources=sources)
         if id is not None:
             message.id = id
         if timestamp is not None:

@@ -27,6 +27,7 @@ async def persist_message(
     role: MessageRole,
     content: str,
     timestamp: datetime,
+    sources: list[dict] | None = None,
 ) -> Message:
     """Writes one message (with a caller-supplied id/timestamp, so this row
     matches the one already handed to the client and cached in Redis) and
@@ -37,7 +38,7 @@ async def persist_message(
         chats = ChatRepository(session)
 
         message = await messages.create(
-            id=id, chat_id=chat_id, role=role, content=content, timestamp=timestamp
+            id=id, chat_id=chat_id, role=role, content=content, timestamp=timestamp, sources=sources
         )
 
         chat = await chats.get(chat_id)
@@ -49,3 +50,25 @@ async def persist_message(
         await session.commit()
         logger.debug("Persisted %s message %s for chat %s", role.value, message.id, chat_id)
         return message
+
+
+async def remove_message(*, id: uuid.UUID, chat_id: uuid.UUID) -> None:
+    """Deletes a message row - used to retract a user message that never
+    got a successful assistant reply (see messages.py's error path), so a
+    failed send doesn't leave a half-finished turn sitting in Postgres that
+    would look like a duplicate once the user successfully retries.
+
+    A no-op (with a warning) if the row doesn't exist - this runs after
+    persist_message's own task has already been awaited, but that task may
+    itself have failed before ever inserting the row, in which case there's
+    nothing here to delete."""
+    async with AsyncSessionLocal() as session:
+        messages = MessageRepository(session)
+        message = await messages.get(id)
+        if message is None or message.chat_id != chat_id:
+            logger.warning("remove_message: message %s not found for chat %s", id, chat_id)
+            return
+
+        await messages.delete(message)
+        await session.commit()
+        logger.debug("Removed message %s for chat %s (no assistant reply)", id, chat_id)

@@ -18,7 +18,7 @@ export interface StreamCallbacks {
   onUserMessage?: (event: Extract<ChatStreamEvent, { type: 'user_message' }>) => void;
   onChunk?: (event: Extract<ChatStreamEvent, { type: 'chunk' }>) => void;
   onDone?: (event: Extract<ChatStreamEvent, { type: 'done' }>) => void;
-  onError?: (detail: string) => void;
+  onError?: (detail: string, removedMessageId?: string) => void;
 }
 
 async function postMessage(chatId: string, content: string, token: string | null, signal?: AbortSignal) {
@@ -90,7 +90,7 @@ function dispatchEvent(rawEvent: string, callbacks: StreamCallbacks): void {
       callbacks.onDone?.(event);
       break;
     case 'error':
-      callbacks.onError?.(event.detail);
+      callbacks.onError?.(event.detail, event.removed_message_id);
       break;
   }
 }

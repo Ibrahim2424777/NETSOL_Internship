@@ -9,6 +9,7 @@ ProactorEventLoop - see app/core/event_loop.py.
 """
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -24,8 +25,11 @@ from app.database.session import engine
 from app.middleware.logging import RequestLoggingMiddleware
 from app.middleware.request_id import RequestIDMiddleware
 from app.middleware.security_headers import SecurityHeadersMiddleware
+from app.rag.retriever import Retriever
 from app.redis.client import redis_pool
 from app.services.chat_execution_service import ChatExecutionService
+from app.services.fastembed_service import FastEmbedService
+from app.services.vector_store_service import VectorStoreService
 
 configure_logging()
 logger = logging.getLogger(__name__)
@@ -52,9 +56,22 @@ async def lifespan(app: FastAPI):
     checkpointer = AsyncPostgresSaver(conn=checkpoint_pool)
     await checkpointer.setup()  # idempotent - safe to run on every startup
 
+    # fastembed's model cache defaults to the OS temp directory, which can be
+    # cleared at any time - pinning it next to the vector store keeps a
+    # restart from silently turning into a slow re-download.
+    embedding_cache_dir = str(Path(settings.RAG_VECTOR_DB_PATH).parent / "embedding_cache")
+    embedding_service = await FastEmbedService.create(
+        model_name=settings.RAG_EMBEDDING_MODEL, cache_dir=embedding_cache_dir
+    )
+    vector_store = await VectorStoreService.create(
+        db_path=settings.RAG_VECTOR_DB_PATH, embedding_service=embedding_service
+    )
+    retriever = Retriever(vector_store, top_k=settings.RAG_TOP_K, min_score=settings.RAG_MIN_SCORE)
+
     app.state.checkpoint_pool = checkpoint_pool
     app.state.chat_execution_service = ChatExecutionService(
         get_model_service(),
+        retriever,
         checkpointer=checkpointer,
         max_history_messages=settings.MAX_HISTORY_MESSAGES,
     )

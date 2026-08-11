@@ -21,20 +21,26 @@ from langgraph.graph.state import CompiledStateGraph
 
 from app.langgraph.graphs.chat_graph import build_chat_graph
 from app.langgraph.state import ChatState
+from app.rag.retriever import Retriever
 from app.services.model_service import ModelService
+from app.services.vector_store_service import RetrievedChunk
 
 
 class ChatExecutionService:
     def __init__(
         self,
         model_service: ModelService,
+        retriever: Retriever,
         *,
         checkpointer: BaseCheckpointSaver,
         max_history_messages: int,
     ) -> None:
         self._checkpointer = checkpointer
         self._graph: CompiledStateGraph = build_chat_graph(
-            model_service, checkpointer=checkpointer, max_history_messages=max_history_messages
+            model_service,
+            retriever,
+            checkpointer=checkpointer,
+            max_history_messages=max_history_messages,
         )
 
     async def forget_chat(self, chat_id: uuid.UUID) -> None:
@@ -54,7 +60,7 @@ class ChatExecutionService:
         response. Not used by the chat-message endpoint (which streams), but
         kept for callers that just want a single result - e.g. a future
         auto-title-generation feature."""
-        initial_state: ChatState = {"messages": [HumanMessage(content=user_input)]}
+        initial_state: ChatState = {"messages": [HumanMessage(content=user_input)], "retrieved_context": []}
         result = await self._graph.ainvoke(initial_state, config=self._config(chat_id))
 
         messages = result["messages"]
@@ -66,8 +72,20 @@ class ChatExecutionService:
         """Streaming: yields response text chunks as they arrive from the
         model node, via LangGraph's custom stream mode (see
         app/langgraph/nodes/model_node.py's use of get_stream_writer)."""
-        initial_state: ChatState = {"messages": [HumanMessage(content=user_input)]}
+        initial_state: ChatState = {"messages": [HumanMessage(content=user_input)], "retrieved_context": []}
         async for chunk in self._graph.astream(
             initial_state, config=self._config(chat_id), stream_mode="custom"
         ):
             yield chunk
+
+    async def get_retrieved_sources(self, chat_id: uuid.UUID) -> list[RetrievedChunk]:
+        """Reads back the retrieved_context the most recent graph run wrote
+        to this thread's checkpointed state. Called after run_stream()
+        completes, to attach source attribution to the assistant message
+        that's about to be cached/persisted (see messages.py) - kept
+        separate from run_stream() itself so streaming's yield type stays
+        plain text chunks, not a tagged union of text and metadata."""
+        snapshot = await self._graph.aget_state(self._config(chat_id))
+        if snapshot is None or snapshot.values is None:
+            return []
+        return snapshot.values.get("retrieved_context", [])

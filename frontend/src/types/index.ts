@@ -18,12 +18,20 @@ export interface Chat {
   updated_at: string;
 }
 
+export interface MessageSource {
+  source: string;
+  page: number | null;
+}
+
 export interface Message {
   id: string;
   chat_id: string;
   role: MessageRole;
   content: string;
   timestamp: string;
+  // Present only on a RAG-grounded assistant reply (Phase 12) - which
+  // ingested document chunks the answer drew on. Absent/null otherwise.
+  sources?: MessageSource[] | null;
 }
 
 export interface TokenResponse {
@@ -39,4 +47,7 @@ export type ChatStreamEvent =
   | { type: 'user_message'; message: Message }
   | { type: 'chunk'; content: string }
   | { type: 'done'; message: Message }
-  | { type: 'error'; detail: string };
+  // removed_message_id is set when the user's message was un-sent because
+  // the assistant failed to respond - the id to remove from the UI so a
+  // retry doesn't look like the same question was sent twice.
+  | { type: 'error'; detail: string; removed_message_id?: string };

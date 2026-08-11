@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from sqlalchemy import DateTime, ForeignKey, Index, Text
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy import func
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.base import Base
@@ -53,6 +54,12 @@ class Message(Base):
         nullable=False,
     )
     content: Mapped[str] = mapped_column(Text, nullable=False)
+    # NULL for every message except a RAG-grounded assistant reply (Phase
+    # 12) - a list of {"source": ..., "page": ...} objects identifying which
+    # ingested document chunks the answer was generated from. Retained here
+    # (not just sent over SSE) so it survives a page refresh - see
+    # app/api/v1/endpoints/messages.py.
+    sources: Mapped[list[dict] | None] = mapped_column(JSONB, nullable=True)
     timestamp: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

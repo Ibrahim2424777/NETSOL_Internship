@@ -18,6 +18,15 @@ class SendMessageRequest(BaseModel):
         return stripped
 
 
+class MessageSource(BaseModel):
+    """One document a RAG-grounded reply drew on - deliberately minimal
+    (just enough for "Sources: - filename.pdf (p. 3)"), not a full citation
+    with chunk text/score - see Phase 12 doc section 15."""
+
+    source: str
+    page: int | None = None
+
+
 class MessageResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -26,3 +35,4 @@ class MessageResponse(BaseModel):
     role: MessageRole
     content: str
     timestamp: datetime
+    sources: list[MessageSource] | None = None

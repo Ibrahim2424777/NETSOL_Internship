@@ -45,6 +45,19 @@ function MessageBubble({ message, isStreaming = false }: MessageBubbleProps) {
               <MarkdownMessage content={message.content} />
             </Suspense>
             {isStreaming && <span className="streaming-cursor" aria-hidden="true" />}
+            {!isStreaming && message.sources && message.sources.length > 0 && (
+              <div className="small text-body-secondary mt-2 border-top pt-1">
+                Sources used:
+                <ul className="mb-0 ps-3">
+                  {message.sources.map((s, i) => (
+                    <li key={i}>
+                      {s.source}
+                      {s.page != null && ` (p. ${s.page})`}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </>
         )}
       </div>

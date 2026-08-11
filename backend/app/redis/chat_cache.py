@@ -82,6 +82,30 @@ class ChatCache:
         except Exception:
             logger.warning("ChatCache.replace_messages failed for chat %s", chat_id, exc_info=True)
 
+    async def remove_message(self, chat_id: uuid.UUID, message_id: uuid.UUID) -> None:
+        """Removes one message from the cache by id - used to retract a
+        user message that never got a successful assistant reply (see
+        messages.py's error path), not the normal append-only path. Unlike
+        replace_messages, this correctly clears the key entirely if the
+        removed message was the only one cached, rather than leaving a
+        stale entry behind."""
+        key = _key(chat_id)
+        try:
+            cached = await self.get_messages(chat_id)
+            if cached is None:
+                return
+            remaining = [m for m in cached if m.get("id") != str(message_id)]
+            if len(remaining) == len(cached):
+                return  # message wasn't cached - nothing to do
+            async with self._redis.pipeline(transaction=True) as pipe:
+                pipe.delete(key)
+                if remaining:
+                    pipe.rpush(key, *(json.dumps(m, default=str) for m in remaining))
+                    pipe.expire(key, _TTL_SECONDS)
+                await pipe.execute()
+        except Exception:
+            logger.warning("ChatCache.remove_message failed for chat %s", chat_id, exc_info=True)
+
     async def delete(self, chat_id: uuid.UUID) -> None:
         """Called when a chat is deleted, so its cache entry doesn't linger
         for up to an hour after the chat itself is gone."""

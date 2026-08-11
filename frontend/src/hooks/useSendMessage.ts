@@ -50,6 +50,20 @@ export function useSendMessage(chatId: string) {
     );
   }, [chatId, queryClient]);
 
+  // Un-sends a specific message (the user's, per removed_message_id on the
+  // error event) - the backend has already deleted its own copies (Redis +
+  // Postgres) by the time this event arrives, so this just brings the UI
+  // back in sync with that, rather than leaving a question visible that
+  // never actually got answered.
+  const removeMessageById = useCallback(
+    (id: string) => {
+      queryClient.setQueryData<Message[]>(messageKeys.list(chatId), (old = []) =>
+        old.filter((m) => m.id !== id),
+      );
+    },
+    [chatId, queryClient],
+  );
+
   const sendMessage = useCallback(
     async (content: string) => {
       setError(null);
@@ -77,8 +91,11 @@ export function useSendMessage(chatId: string) {
               // ordering bumps on every message) - refetch the list.
               queryClient.invalidateQueries({ queryKey: chatKeys.list() });
             },
-            onError: (detail) => {
+            onError: (detail, removedMessageId) => {
               removeDraft();
+              if (removedMessageId) {
+                removeMessageById(removedMessageId);
+              }
               setError(detail);
             },
           },
@@ -94,7 +111,7 @@ export function useSendMessage(chatId: string) {
         abortRef.current = null;
       }
     },
-    [chatId, appendMessage, upsertDraft, removeDraft, queryClient],
+    [chatId, appendMessage, upsertDraft, removeDraft, removeMessageById, queryClient],
   );
 
   const cancel = useCallback(() => {
