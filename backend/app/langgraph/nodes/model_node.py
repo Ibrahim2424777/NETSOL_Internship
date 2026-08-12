@@ -1,4 +1,6 @@
-"""Model node — the second node in the graph, after the retriever (Phase 12).
+"""Model node - the final node on the "normal" and "rag" branches of the
+chat graph (see app/langgraph/graphs/chat_graph.py). The "web_search" branch
+does NOT converge here - see web_search_node.py for why.
 
 make_model_node is a factory, not the node itself: it takes a ModelService
 and returns a node function closed over it. This is how the injected
@@ -18,11 +20,11 @@ max_history_messages turns here, right before the model call, rather than
 upstream, so "how much context Gemini gets" stays a single, visible decision
 in the one place that actually talks to the model.
 
-state["retrieved_context"] (Phase 12) is folded into the CURRENT turn only -
-see _build_grounded_turns. Older turns in history are left as plain text:
-they were already answered (grounded on their own retrieval at the time),
-and re-injecting retrieval boilerplate into every historical turn on every
-call would both bloat the prompt and duplicate context Gemini already
+state["retrieved_context"] (Phase 12, RAG) is folded into the CURRENT turn
+only - see _build_grounded_turns. Older turns in history are left as plain
+text: they were already answered (grounded on their own retrieval at the
+time), and re-injecting retrieval boilerplate into every historical turn on
+every call would both bloat the prompt and duplicate context Gemini already
 responded to once. Only state["messages"] itself (not this augmented copy)
 is what gets checkpointed, so the retrieval framing never leaks into
 persisted conversation history.
@@ -41,11 +43,10 @@ logger = logging.getLogger(__name__)
 
 _GROUNDING_INSTRUCTIONS = (
     "Instructions: Prefer the retrieved context above when answering. Answer "
-    "using the retrieved information where it is relevant. Do not invent "
-    "facts that are not supported by the retrieved context or the "
-    "conversation. If the retrieved context does not contain enough "
-    "information to answer, clearly say so. Never claim information came "
-    "from the document if it did not."
+    "using that information where relevant. Do not invent facts, dates, or "
+    "details that aren't present above or in the conversation. If the "
+    "provided information does not answer the question, clearly say so "
+    "instead of guessing."
 )
 
 
@@ -60,20 +61,17 @@ def _format_chunk(chunk: RetrievedChunk) -> str:
     return f"[Source: {chunk['source']}{location}]\n{chunk['content']}"
 
 
-def _build_grounded_turns(
-    history: list[ModelTurn], retrieved: list[RetrievedChunk]
-) -> list[ModelTurn]:
+def _build_grounded_turns(history: list[ModelTurn], retrieved: list[RetrievedChunk]) -> list[ModelTurn]:
     """Rewrites only the last (current) turn's content to include retrieved
-    context, leaving every earlier turn untouched. No-ops if there's nothing
-    retrieved - e.g. before any document has been ingested, or when the
-    query has no relevant match - so a plain conversational answer is still
-    possible without a dangling empty "Retrieved Context:" block."""
+    RAG context, leaving every earlier turn untouched. No-ops entirely when
+    there's nothing to add, so a plain conversational answer is still
+    possible without a dangling empty context block."""
     if not retrieved or not history or history[-1]["role"] != "user":
         return history
 
-    context_block = "\n\n".join(_format_chunk(chunk) for chunk in retrieved)
+    context_section = "Retrieved Context:\n\n" + "\n\n".join(_format_chunk(c) for c in retrieved)
     grounded_content = (
-        f"Retrieved Context:\n\n{context_block}\n\n"
+        f"{context_section}\n\n"
         f"User Question:\n{history[-1]['content']}\n\n"
         f"{_GROUNDING_INSTRUCTIONS}"
     )

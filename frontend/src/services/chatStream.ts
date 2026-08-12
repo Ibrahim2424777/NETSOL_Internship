@@ -21,7 +21,13 @@ export interface StreamCallbacks {
   onError?: (detail: string, removedMessageId?: string) => void;
 }
 
-async function postMessage(chatId: string, content: string, token: string | null, signal?: AbortSignal) {
+async function postMessage(
+  chatId: string,
+  content: string,
+  webSearch: boolean,
+  token: string | null,
+  signal?: AbortSignal,
+) {
   return fetch(`${API_BASE_URL}/chats/${chatId}/messages`, {
     method: 'POST',
     headers: {
@@ -29,7 +35,7 @@ async function postMessage(chatId: string, content: string, token: string | null
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     credentials: 'include',
-    body: JSON.stringify({ content }),
+    body: JSON.stringify({ content, web_search: webSearch }),
     signal,
   });
 }
@@ -37,14 +43,15 @@ async function postMessage(chatId: string, content: string, token: string | null
 export async function streamChatMessage(
   chatId: string,
   content: string,
+  webSearch: boolean,
   callbacks: StreamCallbacks,
   signal?: AbortSignal,
 ): Promise<void> {
-  let response = await postMessage(chatId, content, getAuthState().accessToken, signal);
+  let response = await postMessage(chatId, content, webSearch, getAuthState().accessToken, signal);
 
   if (response.status === 401) {
     const newToken = await refreshAccessToken();
-    response = await postMessage(chatId, content, newToken, signal);
+    response = await postMessage(chatId, content, webSearch, newToken, signal);
   }
 
   if (!response.ok || !response.body) {

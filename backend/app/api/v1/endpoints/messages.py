@@ -36,6 +36,7 @@ async def _stream_message(
     *,
     chat_id: uuid.UUID,
     user_content: str,
+    web_search: bool,
     execution: ChatExecutionService,
     cache: ChatCache,
 ) -> AsyncIterator[str]:
@@ -75,7 +76,7 @@ async def _stream_message(
     # so it surfaces here the same way any other model-layer error does.
     full_response = ""
     try:
-        async for chunk in execution.run_stream(chat_id, user_content):
+        async for chunk in execution.run_stream(chat_id, user_content, web_search=web_search):
             full_response += chunk
             yield _sse({"type": "chunk", "content": chunk})
     except Exception:
@@ -99,7 +100,10 @@ async def _stream_message(
     await _await_quietly(persist_user_task, chat_id, "user")
 
     # --- Step 6/7: cache + persist the assistant's full response ---
-    sources = await _retrieved_sources(execution, chat_id)
+    # Mutually exclusive per turn (a turn routes to exactly one of rag/
+    # web_search/normal), so at most one of these is ever non-None.
+    sources = await _retrieved_sources(execution, chat_id) or await _web_search_sources(execution, chat_id)
+    route = await _route_taken(execution, chat_id)
     assistant_message = MessageResponse(
         id=uuid.uuid4(),
         chat_id=chat_id,
@@ -127,7 +131,23 @@ async def _stream_message(
         # already generated successfully. It's logged for follow-up.
 
     # --- Step 8: signal completion with the authoritative saved message ---
-    yield _sse({"type": "done", "message": assistant_payload})
+    # route is deliberately NOT part of MessageResponse/persisted to Postgres
+    # (Phase 14 doc section 18 frames the UI indicator as optional/subtle) -
+    # it's attached only to this one SSE event, so a page refresh simply
+    # loses it rather than needing a schema/migration for a nice-to-have.
+    yield _sse({"type": "done", "message": assistant_payload, "route": route})
+
+
+async def _route_taken(execution: ChatExecutionService, chat_id: uuid.UUID) -> str | None:
+    """Reads back which route the router chose for this turn, for the
+    frontend's subtle source indicator (Phase 14 doc section 18). Best-effort
+    only - the assistant's reply already succeeded by the time this runs, so
+    a failure here shouldn't turn into a client-facing error."""
+    try:
+        return await execution.get_route(chat_id)
+    except Exception:
+        logger.exception("Failed to read back route for chat %s", chat_id)
+        return None
 
 
 async def _retrieved_sources(
@@ -155,6 +175,24 @@ async def _retrieved_sources(
             seen.add(key)
             sources.append(MessageSource(source=chunk["source"], page=chunk["page"]))
     return sources
+
+
+async def _web_search_sources(
+    execution: ChatExecutionService, chat_id: uuid.UUID
+) -> list[MessageSource] | None:
+    """Web-search counterpart to _retrieved_sources (Phase 14.6) - reads
+    back compound-mini's citations for this turn, if any. None (not []) when
+    nothing was found, matching _retrieved_sources' convention."""
+    try:
+        citations = await execution.get_web_search_sources(chat_id)
+    except Exception:
+        logger.exception("Failed to read back web search sources for chat %s", chat_id)
+        return None
+
+    if not citations:
+        return None
+
+    return [MessageSource(source=c["title"], url=c["url"]) for c in citations]
 
 
 async def _retract_user_message(cache: ChatCache, chat_id: uuid.UUID, message_id: uuid.UUID) -> None:
@@ -190,7 +228,13 @@ async def send_message(
     cache: ChatCacheDep,
 ) -> StreamingResponse:
     return StreamingResponse(
-        _stream_message(chat_id=chat.id, user_content=payload.content, execution=execution, cache=cache),
+        _stream_message(
+            chat_id=chat.id,
+            user_content=payload.content,
+            web_search=payload.web_search,
+            execution=execution,
+            cache=cache,
+        ),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",

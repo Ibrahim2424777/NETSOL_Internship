@@ -437,6 +437,16 @@ button:focus-visible,
   gap: 0.4rem;
   padding: 0.2rem 0;
 }
+.source-chip a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--app-border);
+  text-underline-offset: 2px;
+}
+.source-chip a:hover {
+  color: var(--app-accent);
+  text-decoration-color: currentColor;
+}
 
 /* Typing indicator: three dots pulsing in sequence (TypingIndicator.tsx) */
 @keyframes typing-dot-bounce {
@@ -554,6 +564,29 @@ button:focus-visible,
 }
 .composer-send-btn:disabled {
   opacity: 0.4;
+}
+
+.composer-tool-toggle {
+  font-size: 0.8rem;
+  color: var(--app-text-secondary);
+  background: transparent;
+  border: 1px solid var(--app-border);
+  border-radius: 999px;
+  padding: 0.3rem 0.7rem;
+  transition: background-color var(--app-transition-fast), border-color var(--app-transition-fast),
+    color var(--app-transition-fast);
+}
+.composer-tool-toggle:hover:not(:disabled) {
+  border-color: var(--app-accent);
+  color: var(--app-text-primary);
+}
+.composer-tool-toggle:disabled {
+  opacity: 0.5;
+}
+.composer-tool-toggle.is-active {
+  background: var(--app-accent-gradient-soft);
+  border-color: var(--app-accent);
+  color: var(--app-accent);
 }
 
 /* ==========================================================================

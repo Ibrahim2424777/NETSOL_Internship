@@ -8,6 +8,11 @@ from app.models.message import MessageRole
 
 class SendMessageRequest(BaseModel):
     content: str = Field(..., min_length=1, max_length=32_000)
+    # Phase 14.6: the frontend's explicit web-search toggle for THIS message
+    # only (not a chat-level setting) - forces the chat graph straight to
+    # the web_search route, bypassing the normal/RAG classifier entirely.
+    # See ChatExecutionService.run_stream's web_search parameter.
+    web_search: bool = False
 
     @field_validator("content")
     @classmethod
@@ -19,12 +24,15 @@ class SendMessageRequest(BaseModel):
 
 
 class MessageSource(BaseModel):
-    """One document a RAG-grounded reply drew on - deliberately minimal
-    (just enough for "Sources: - filename.pdf (p. 3)"), not a full citation
-    with chunk text/score - see Phase 12 doc section 15."""
+    """One source a grounded reply drew on - either a RAG document chunk
+    (source=filename, page=N, url=None) or a web search result (Phase 14.6:
+    source=page title, page=None, url=the actual link). Deliberately minimal
+    (just enough for "Sources: - filename.pdf (p. 3)" or a clickable link),
+    not a full citation with chunk text/score - see Phase 12 doc section 15."""
 
     source: str
     page: int | None = None
+    url: str | None = None
 
 
 class MessageResponse(BaseModel):

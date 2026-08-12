@@ -64,3 +64,16 @@ export function DocumentIcon(props: IconProps) {
     </svg>
   );
 }
+
+// Web search (Phase 14.6) - the composer's search toggle button and the
+// citation chips on a web_search-routed reply, same visual language as
+// DocumentIcon's use in the RAG sources panel.
+export function GlobeIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="12" cy="12" r="10" />
+      <line x1="2" y1="12" x2="22" y2="12" />
+      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+    </svg>
+  );
+}

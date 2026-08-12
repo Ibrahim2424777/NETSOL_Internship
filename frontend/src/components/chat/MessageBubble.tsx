@@ -1,7 +1,7 @@
 import { Suspense, lazy, memo } from 'react';
 
 import type { Message } from '../../types';
-import { DocumentIcon } from '../icons';
+import { DocumentIcon, GlobeIcon } from '../icons';
 
 // Lazy-loaded: react-markdown + remark-gfm + react-syntax-highlighter (with
 // its language grammars) are the single heaviest dependency in this app,
@@ -57,16 +57,27 @@ function MessageBubble({ message, isStreaming = false }: MessageBubbleProps) {
           <MarkdownMessage content={message.content} />
         </Suspense>
         {isStreaming && <span className="streaming-cursor" aria-hidden="true" />}
+        {/* One list, two kinds of entries: RAG document chunks (page, no
+            url) and web search citations (url, no page) - see
+            MessageSource. A source's own shape (not message.route) decides
+            how each chip renders, so this stays correct even if a future
+            route mixes both in one reply. */}
         {!isStreaming && message.sources && message.sources.length > 0 && (
           <div className="sources-panel mt-3 pt-2">
             <div className="sources-panel-title mb-1">Sources</div>
             {message.sources.map((s, i) => (
               <div className="source-chip" key={i}>
-                <DocumentIcon className="flex-shrink-0" />
-                <span>
-                  {s.source}
-                  {s.page != null && <span className="text-muted"> · p. {s.page}</span>}
-                </span>
+                {s.url ? <GlobeIcon className="flex-shrink-0" /> : <DocumentIcon className="flex-shrink-0" />}
+                {s.url ? (
+                  <a href={s.url} target="_blank" rel="noopener noreferrer">
+                    {s.source}
+                  </a>
+                ) : (
+                  <span>
+                    {s.source}
+                    {s.page != null && <span className="text-muted"> · p. {s.page}</span>}
+                  </span>
+                )}
               </div>
             ))}
           </div>

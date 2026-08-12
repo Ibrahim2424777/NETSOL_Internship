@@ -2,15 +2,19 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import type { FormEvent, KeyboardEvent } from 'react';
 import Form from 'react-bootstrap/Form';
 
-import { SendIcon } from '../icons';
+import { GlobeIcon, SendIcon } from '../icons';
 
 interface MessageComposerProps {
-  onSend: (content: string) => void;
+  onSend: (content: string, webSearch: boolean) => void;
   disabled: boolean;
 }
 
 export default function MessageComposer({ onSend, disabled }: MessageComposerProps) {
   const [value, setValue] = useState('');
+  // Per-message, not a chat-level setting - resets after each send rather
+  // than staying "on" for the rest of the conversation, so it's a deliberate
+  // choice every time rather than an easy-to-forget sticky mode.
+  const [webSearchEnabled, setWebSearchEnabled] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Auto-grows with content up to CSS's max-height (200px, then scrolls) -
@@ -26,8 +30,9 @@ export default function MessageComposer({ onSend, disabled }: MessageComposerPro
   const submit = () => {
     const trimmed = value.trim();
     if (!trimmed || disabled) return;
-    onSend(trimmed);
+    onSend(trimmed, webSearchEnabled);
     setValue('');
+    setWebSearchEnabled(false);
   };
 
   const handleSubmit = (event: FormEvent) => {
@@ -64,6 +69,18 @@ export default function MessageComposer({ onSend, disabled }: MessageComposerPro
           aria-label="Send message"
         >
           <SendIcon />
+        </button>
+      </div>
+      <div className="d-flex mt-2">
+        <button
+          type="button"
+          className={`composer-tool-toggle d-inline-flex align-items-center gap-1 ${webSearchEnabled ? 'is-active' : ''}`}
+          disabled={disabled}
+          onClick={() => setWebSearchEnabled((enabled) => !enabled)}
+          aria-pressed={webSearchEnabled}
+        >
+          <GlobeIcon />
+          <span>Web search</span>
         </button>
       </div>
     </Form>

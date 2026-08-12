@@ -55,6 +55,14 @@ class Settings(BaseSettings):
     # once a chat has hundreds of messages in Postgres/the checkpoint.
     MAX_HISTORY_MESSAGES: int = 20
 
+    # --- LangGraph routing (Phase 14) ---
+    # How many of the most recent messages the router's classification call
+    # sees - deliberately much smaller than MAX_HISTORY_MESSAGES, since the
+    # router only needs enough context to resolve pronouns/follow-ups
+    # ("where is it being played?"), not the full conversation - keeping
+    # this small is what keeps the extra per-turn classification call cheap.
+    ROUTER_CONTEXT_MESSAGES: int = 6
+
     # --- Document RAG ---
     # Local, on-disk LanceDB directory - separate storage layer from
     # Postgres/Redis, survives backend restarts on its own (see
@@ -94,6 +102,41 @@ class Settings(BaseSettings):
     # API keys), so if this 404s later, check
     # https://ai.google.dev/gemini-api/docs/models for a current name.
     GEMINI_MODEL: str = "gemini-3.5-flash"
+
+    # --- Groq (fallback LLM provider, Phase 14.5) ---
+    # Not required (empty default) - the app still starts and runs Gemini-only
+    # if this is unset; a fallback simply isn't available (see
+    # app/api/deps.py's get_model_service).
+    GROQ_API_KEY: str = ""
+    # Verified live against api.groq.com/openai/v1/models as of this writing.
+    # openai/gpt-oss-120b, not one of the Llama models - Groq deprecated
+    # llama-3.1-8b-instant/llama-3.3-70b-versatile (free/developer tier) in
+    # favor of the gpt-oss line, so a Llama default would already be a
+    # deprecated choice. 131k context, and (unlike some Groq models as of
+    # this writing) supports Structured Outputs, though GroqService uses
+    # JSON mode + explicit validation instead - see its classify() docstring
+    # for why.
+    GROQ_MODEL: str = "openai/gpt-oss-120b"
+    # Which provider handles live chat traffic. "gemini" (default) = Gemini
+    # primary, Groq fallback (if GROQ_API_KEY is set and
+    # LLM_FALLBACK_PROVIDER=groq). "groq" = talk to Groq directly, no
+    # fallback wrapping - a development override (Phase 14.5 doc section 15)
+    # for testing Groq without burning Gemini's quota first.
+    LLM_PROVIDER: str = "gemini"
+    # "groq" (default) or "none" to disable fallback entirely even when a
+    # Groq key is configured.
+    LLM_FALLBACK_PROVIDER: str = "groq"
+
+    # --- Web search (Phase 14.6) ---
+    # groq/compound-mini, not the larger groq/compound - the full compound
+    # model returned a 413 "Request Entity Too Large" on ordinary,
+    # non-trivial prompts in live testing (a currently-reported Groq issue,
+    # not something on our end), while compound-mini handled the same
+    # prompts reliably and still does real web search + returns citations.
+    # This is the PRIMARY provider for the web_search route specifically -
+    # the reverse of GROQ_MODEL's role, which is the FALLBACK for
+    # normal/rag. Gemini is web search's fallback (see app/api/deps.py).
+    GROQ_COMPOUND_MODEL: str = "groq/compound-mini"
 
     # --- Google OAuth 2.0 ---
     # Required (no default): there is no safe placeholder for an OAuth client

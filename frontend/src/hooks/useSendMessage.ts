@@ -65,7 +65,7 @@ export function useSendMessage(chatId: string) {
   );
 
   const sendMessage = useCallback(
-    async (content: string) => {
+    async (content: string, webSearch = false) => {
       setError(null);
       setIsStreaming(true);
       let draft = '';
@@ -76,6 +76,7 @@ export function useSendMessage(chatId: string) {
         await streamChatMessage(
           chatId,
           content,
+          webSearch,
           {
             onUserMessage: (event) => appendMessage(event.message),
             onChunk: (event) => {
@@ -83,9 +84,14 @@ export function useSendMessage(chatId: string) {
               upsertDraft(draft);
             },
             onDone: (event) => {
+              // route is transient (Phase 14) - only ever known for the
+              // message just streamed in, so it's attached here rather than
+              // coming from the message object itself.
+              const message: Message =
+                event.route != null ? { ...event.message, route: event.route } : event.message;
               queryClient.setQueryData<Message[]>(messageKeys.list(chatId), (old = []) => [
                 ...old.filter((m) => m.id !== DRAFT_MESSAGE_ID),
-                event.message,
+                message,
               ]);
               // The chat's title/updated_at may have changed (sidebar
               // ordering bumps on every message) - refetch the list.

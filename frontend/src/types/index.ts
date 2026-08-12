@@ -3,6 +3,12 @@
 
 export type MessageRole = 'user' | 'assistant' | 'system';
 
+// Which capability answered a given turn (Phase 14, "sports" replaced with
+// "web_search" in Phase 14.6). Only ever attached client-side to the 'done'
+// SSE event for the message just received; never persisted, so it's absent
+// again after a page refresh (see messages.py's _route_taken).
+export type MessageRoute = 'normal' | 'rag' | 'web_search';
+
 export interface User {
   id: string;
   email: string;
@@ -21,6 +27,9 @@ export interface Chat {
 export interface MessageSource {
   source: string;
   page: number | null;
+  // Present only for web search sources (Phase 14.6) - a clickable link to
+  // the cited page. Null/absent for RAG document sources.
+  url?: string | null;
 }
 
 export interface Message {
@@ -32,6 +41,10 @@ export interface Message {
   // Present only on a RAG-grounded assistant reply (Phase 12) - which
   // ingested document chunks the answer drew on. Absent/null otherwise.
   sources?: MessageSource[] | null;
+  // Transient client-side annotation (Phase 14) - see MessageRoute above.
+  // Never comes from the REST API, only attached in-memory when a 'done'
+  // SSE event arrives, so it's absent for messages loaded via GET.
+  route?: MessageRoute | null;
 }
 
 export interface TokenResponse {
@@ -46,7 +59,7 @@ export interface TokenResponse {
 export type ChatStreamEvent =
   | { type: 'user_message'; message: Message }
   | { type: 'chunk'; content: string }
-  | { type: 'done'; message: Message }
+  | { type: 'done'; message: Message; route?: MessageRoute | null }
   // removed_message_id is set when the user's message was un-sent because
   // the assistant failed to respond - the id to remove from the UI so a
   // retry doesn't look like the same question was sent twice.
