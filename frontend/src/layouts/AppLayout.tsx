@@ -75,7 +75,7 @@ function Header() {
             />
           ) : (
             <span
-              className="rounded-circle d-inline-flex align-items-center justify-content-center text-white"
+              className="rounded-circle d-inline-flex align-items-center justify-content-center text-on-accent"
               style={{ width: 30, height: 30, fontSize: '0.75rem', background: 'var(--app-accent-gradient)' }}
             >
               {user?.name.charAt(0).toUpperCase()}
@@ -87,6 +87,9 @@ function Header() {
             {user?.email}
           </Dropdown.ItemText>
           <Dropdown.Divider />
+          <Dropdown.Item as={Link} to="/">
+            Home
+          </Dropdown.Item>
           <Dropdown.Item as={Link} to="/profile">
             Profile
           </Dropdown.Item>

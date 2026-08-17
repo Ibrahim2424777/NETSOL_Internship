@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Design tokens (Phase 12.5)
+   Design tokens (Phase 12.5, re-themed black+gold in Phase 15.1)
 
    Scoped to `:root[data-bs-theme="dark"]` (matches <html data-bs-theme="dark">
    in index.html) with higher specificity than Bootstrap's own
@@ -9,33 +9,46 @@
    throughout the app picks these up automatically, since Bootstrap's own
    utilities are themselves built on these same CSS variables - this is what
    reskins the whole app without editing every component that uses them.
+
+   Phase 15 originally scoped the black/gold palette to the landing page only
+   (`.landing-page` in styles/landing.css) - these ARE those same values,
+   promoted to the app-wide tokens so the theme is consistent on every page
+   (chat, login, profile), not just `/`. styles/landing.css's own `--gold-*`/
+   `--ink-*` tokens are kept as a separate local block for now (same values,
+   just not literally aliased to these) rather than rewritten to reference
+   these directly - see that file's own comment.
    ========================================================================== */
 :root[data-bs-theme='dark'] {
   color-scheme: dark;
 
   /* App-specific tokens - used directly in custom CSS below/in components,
      not aliased through Bootstrap. */
-  --app-bg: #0a0c12;
-  --app-surface: #12141d;
-  --app-surface-2: #171a26;
-  --app-surface-hover: #1e2230;
-  --app-surface-active: #242940;
-  --app-border: #262a3a;
-  --app-border-strong: #333850;
-  --app-text-primary: #eef0f6;
-  --app-text-secondary: #9ba1b8;
-  --app-text-muted: #6b7188;
-  --app-accent: #7c6cf5;
-  --app-accent-2: #5b8cff;
-  --app-accent-gradient: linear-gradient(135deg, #7c6cf5 0%, #5b8cff 100%);
-  --app-accent-gradient-soft: linear-gradient(135deg, rgba(124, 108, 245, 0.16) 0%, rgba(91, 140, 255, 0.16) 100%);
+  --app-bg: #030303;
+  --app-surface: #0f0f12;
+  --app-surface-2: #17161a;
+  --app-surface-hover: #1e1c1f;
+  --app-surface-active: #262319;
+  --app-border: #242018;
+  --app-border-strong: #3a3325;
+  --app-text-primary: #f5f1e8;
+  --app-text-secondary: #a8a294;
+  --app-text-muted: #6f6a5c;
+  --app-accent: #d9a94c;
+  --app-accent-2: #f3cd72;
+  --app-accent-gradient: linear-gradient(135deg, #f3cd72 0%, #d9a94c 55%, #a97c22 100%);
+  --app-accent-gradient-soft: linear-gradient(135deg, rgba(243, 205, 114, 0.16) 0%, rgba(169, 124, 34, 0.14) 100%);
+  /* Text color for content sitting ON a solid --app-accent-gradient fill
+     (buttons, avatars, message bubbles, brand mark) - white text that
+     worked on the old purple/blue gradient reads poorly on a light gold
+     one, so every such spot uses this instead of a literal #fff/text-white. */
+  --app-on-accent: #17130a;
   --app-radius-sm: 8px;
   --app-radius-md: 12px;
   --app-radius-lg: 18px;
   --app-radius-pill: 999px;
   --app-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
   --app-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
-  --app-shadow-glow: 0 0 0 3px rgba(124, 108, 245, 0.25);
+  --app-shadow-glow: 0 0 0 3px rgba(217, 169, 76, 0.28);
   --app-transition-fast: 150ms ease;
   --app-transition: 220ms ease;
   --app-transition-slow: 300ms ease;
@@ -43,7 +56,7 @@
   /* Bootstrap variable overrides - this block is the actual reskin. */
   --bs-body-bg: var(--app-bg);
   --bs-body-color: var(--app-text-primary);
-  --bs-body-color-rgb: 238, 240, 246;
+  --bs-body-color-rgb: 245, 241, 232;
   --bs-secondary-bg: var(--app-surface-2);
   --bs-tertiary-bg: var(--app-surface);
   --bs-border-color: var(--app-border);
@@ -51,13 +64,13 @@
   --bs-secondary-color: var(--app-text-secondary);
   --bs-tertiary-color: var(--app-text-muted);
   --bs-primary: var(--app-accent);
-  --bs-primary-rgb: 124, 108, 245;
-  --bs-primary-text-emphasis: #b3a9ff;
-  --bs-primary-bg-subtle: #211d3d;
-  --bs-primary-border-subtle: #383158;
+  --bs-primary-rgb: 217, 169, 76;
+  --bs-primary-text-emphasis: #f3cd72;
+  --bs-primary-bg-subtle: #2a2113;
+  --bs-primary-border-subtle: #4a3c22;
   --bs-link-color: var(--app-accent-2);
   --bs-link-hover-color: var(--app-accent);
-  --bs-link-color-rgb: 91, 140, 255;
+  --bs-link-color-rgb: 243, 205, 114;
   --bs-danger: #f0576b;
   --bs-emphasis-color: var(--app-text-primary);
 
@@ -77,6 +90,10 @@
   --bs-dropdown-border-color: var(--app-border);
   --bs-dropdown-link-hover-bg: var(--app-surface-hover);
   --bs-dropdown-link-active-bg: var(--app-accent);
+  /* Bootstrap's own default (#fff) for the active/selected item's text -
+     needs overriding here too, not just the background above, now that
+     active-bg is a light gold rather than the old purple. */
+  --bs-dropdown-link-active-color: var(--app-on-accent);
 }
 .modal-content {
   --bs-modal-bg: var(--app-surface-2);
@@ -150,17 +167,17 @@ button:focus-visible,
 .btn-gradient {
   border: none;
   background: var(--app-accent-gradient);
-  color: #fff;
+  color: var(--app-on-accent);
   transition: transform var(--app-transition-fast), box-shadow var(--app-transition-fast);
 }
 .btn-gradient:hover,
 .btn-gradient:focus {
-  color: #fff;
+  color: var(--app-on-accent);
   transform: translateY(-1px);
   box-shadow: var(--app-shadow-md);
 }
 .btn-gradient:active {
-  color: #fff;
+  color: var(--app-on-accent);
 }
 
 .gradient-text {
@@ -168,6 +185,14 @@ button:focus-visible,
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+}
+
+/* Text sitting on a solid --app-accent-gradient fill (avatar fallback
+   initials, etc.) - a `text-*` utility class alternative to `text-white`,
+   since a hardcoded white doesn't have a matching CSS-variable-driven
+   Bootstrap utility to swap in instead. */
+.text-on-accent {
+  color: var(--app-on-accent);
 }
 
 /* The "✦" brand mark used in the sidebar, headers, and empty state -
@@ -180,7 +205,7 @@ button:focus-visible,
   height: 1.6em;
   border-radius: var(--app-radius-sm);
   background: var(--app-accent-gradient);
-  color: #fff;
+  color: var(--app-on-accent);
   font-size: 0.95em;
   flex-shrink: 0;
 }
@@ -311,7 +336,7 @@ button:focus-visible,
 
 .message-bubble-user {
   background: var(--app-accent-gradient);
-  color: #fff;
+  color: var(--app-on-accent);
   border-radius: var(--app-radius-lg) var(--app-radius-lg) 4px var(--app-radius-lg);
   box-shadow: var(--app-shadow-sm);
 }
@@ -326,7 +351,7 @@ button:focus-visible,
   height: 26px;
   border-radius: var(--app-radius-sm);
   background: var(--app-accent-gradient);
-  color: #fff;
+  color: var(--app-on-accent);
   font-size: 0.8rem;
   flex-shrink: 0;
 }
@@ -505,7 +530,7 @@ button:focus-visible,
   height: 56px;
   border-radius: var(--app-radius-lg);
   background: var(--app-accent-gradient);
-  color: #fff;
+  color: var(--app-on-accent);
   font-size: 1.6rem;
   box-shadow: var(--app-shadow-md);
 }
@@ -552,7 +577,7 @@ button:focus-visible,
   border-radius: 50%;
   border: none;
   background: var(--app-accent-gradient);
-  color: #fff;
+  color: var(--app-on-accent);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -601,8 +626,8 @@ button:focus-visible,
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(600px circle at 15% 20%, rgba(124, 108, 245, 0.16), transparent 60%),
-    radial-gradient(500px circle at 85% 75%, rgba(91, 140, 255, 0.14), transparent 60%);
+    radial-gradient(600px circle at 15% 20%, rgba(217, 169, 76, 0.16), transparent 60%),
+    radial-gradient(500px circle at 85% 75%, rgba(243, 205, 114, 0.14), transparent 60%);
   pointer-events: none;
 }
 .auth-card {

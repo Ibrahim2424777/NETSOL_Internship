@@ -29,7 +29,7 @@ export default function ProfilePage() {
           />
         ) : (
           <div
-            className="rounded-circle text-white d-inline-flex align-items-center justify-content-center mb-3"
+            className="rounded-circle text-on-accent d-inline-flex align-items-center justify-content-center mb-3"
             style={{ width: 88, height: 88, fontSize: '1.8rem', background: 'var(--app-accent-gradient)' }}
           >
             {user.name.charAt(0).toUpperCase()}

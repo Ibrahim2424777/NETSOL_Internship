@@ -1,8 +1,23 @@
-import { Link, Outlet } from 'react-router-dom';
+import { Link, Outlet, useLocation } from 'react-router-dom';
 
-// Shared chrome for public pages (Landing, Login, 404): a simple header
-// with the app brand and a sign-in link. Chat/Profile use AppLayout instead.
+// Shared chrome for public pages (Login, 404): a simple header with the app
+// brand and a sign-in link. Chat/Profile use AppLayout instead.
+//
+// `/` (LandingPage) is the one exception, in BOTH its auth states: the
+// logged-out marketing page has its own full navbar (LandingHeader, styled
+// for the black/gold landing design system) and the logged-in personalized
+// page has its own header+sidebar shell (PersonalizedHeader) - either way,
+// stacking this layout's plain "Sign in" header above either would just be
+// a redundant/mismatched second header. So this layout steps out of the way
+// entirely for `/` and lets LandingPage own 100% of its own chrome.
 export default function PublicLayout() {
+  const location = useLocation();
+  const isLandingPage = location.pathname === '/';
+
+  if (isLandingPage) {
+    return <Outlet />;
+  }
+
   return (
     <div className="d-flex flex-column min-vh-100">
       <header className="chat-header d-flex align-items-center px-3 py-2 flex-shrink-0">

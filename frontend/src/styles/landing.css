@@ -1,0 +1,836 @@
+/* ==========================================================================
+   Landing page design system (Phase 15)
+
+   Originally scoped to `.landing-page` because the rest of the app still had
+   its old purple/blue theme; Phase 15.1 promoted this same black/gold
+   palette to the app-wide tokens in index.css's :root block too, so now
+   every page matches. This file's own --gold-* / --ink-* tokens are kept
+   (same values, not literally aliased to --app-*) rather than rewritten to
+   reference index.css directly - purely to avoid re-touching every class
+   below for a DRY-only win with no visual effect. Bootstrap layout utilities
+   (Container, Row, Col, d-flex, spacing) are still used throughout the
+   landing components for structure; Bootstrap's COLOR utilities
+   (text-secondary, btn-outline-*, etc.) are still avoided here in favor of
+   these local tokens, since index.css's Bootstrap-variable overrides are
+   scoped to `:root[data-bs-theme='dark']`, one extra level of specificity
+   this file's plain class selectors don't need to fight.
+   ========================================================================== */
+.landing-page {
+  --gold: #d9a94c;
+  --gold-bright: #f3cd72;
+  --gold-deep: #a97c22;
+  --gold-gradient: linear-gradient(135deg, var(--gold-bright) 0%, var(--gold) 55%, var(--gold-deep) 100%);
+  --gold-soft: rgba(217, 169, 76, 0.12);
+  --gold-border: rgba(217, 169, 76, 0.35);
+  --gold-glow: rgba(217, 169, 76, 0.28);
+
+  --ink: #030303;
+  --ink-1: #08080a;
+  --ink-2: #0f0f12;
+  --ink-3: #17161a;
+  --ink-border: #242018;
+  --ink-border-strong: #3a3325;
+  --ink-text: #f5f1e8;
+  --ink-text-secondary: #a8a294;
+  --ink-text-muted: #6f6a5c;
+  --ink-radius-sm: 8px;
+  --ink-radius-md: 14px;
+  --ink-radius-lg: 22px;
+  --ink-transition: 220ms ease;
+  --ink-transition-slow: 500ms cubic-bezier(0.16, 1, 0.3, 1);
+
+  background: var(--ink);
+  color: var(--ink-text);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  min-height: 100%;
+  position: relative;
+}
+
+.landing-page ::selection {
+  background: var(--gold-soft);
+  color: var(--ink-text);
+}
+
+/* ==========================================================================
+   Shared primitives
+   ========================================================================== */
+.landing-eyebrow {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--gold);
+}
+
+.landing-gradient-text {
+  background: var(--gold-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.landing-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: none;
+  border-radius: var(--ink-radius-md);
+  background: var(--gold-gradient);
+  color: var(--ink);
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  text-decoration: none;
+  transition: transform var(--ink-transition), box-shadow var(--ink-transition);
+}
+.landing-btn-primary:hover,
+.landing-btn-primary:focus-visible {
+  color: var(--ink);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px var(--gold-glow);
+}
+
+.landing-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid var(--ink-border-strong);
+  border-radius: var(--ink-radius-md);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--ink-text);
+  font-weight: 500;
+  padding: 0.75rem 1.5rem;
+  text-decoration: none;
+  transition: border-color var(--ink-transition), background var(--ink-transition), transform var(--ink-transition);
+}
+.landing-btn-secondary:hover,
+.landing-btn-secondary:focus-visible {
+  color: var(--ink-text);
+  border-color: var(--gold-border);
+  background: var(--gold-soft);
+  transform: translateY(-2px);
+}
+
+.landing-page a:focus-visible,
+.landing-page button:focus-visible,
+.landing-page [tabindex]:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  border-radius: var(--ink-radius-sm);
+}
+
+/* ==========================================================================
+   Ambient background glow - a handful of large, blurred, slowly-drifting
+   radial gradients behind the content (fixed within the section, not
+   following scroll) rather than a static flat black - this is what section
+   14's "subtle gradients / soft glowing effects" asks for without a video
+   or image asset (section 23: no heavy assets).
+   ========================================================================== */
+.landing-glow-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  z-index: 0;
+}
+@keyframes landing-drift {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(3%, -4%) scale(1.06);
+  }
+}
+.landing-glow-orb {
+  animation: landing-drift 14s ease-in-out infinite;
+}
+
+/* ==========================================================================
+   Scroll reveal (Phase 15, section 7) - see useScrollReveal.ts. Plain CSS
+   transitions, no animation library. The global `prefers-reduced-motion`
+   rule in index.css already collapses transition-duration to ~0 for every
+   element on the page, so reduced-motion users still get the content (just
+   without the visible motion), satisfying section 22 automatically.
+   ========================================================================== */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity var(--ink-transition-slow), transform var(--ink-transition-slow);
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.reveal-left {
+  transform: translateX(-36px);
+}
+.reveal-left.is-visible {
+  transform: translateX(0);
+}
+.reveal-right {
+  transform: translateX(36px);
+}
+.reveal-right.is-visible {
+  transform: translateX(0);
+}
+.reveal-scale {
+  transform: scale(0.94);
+}
+.reveal-scale.is-visible {
+  transform: scale(1);
+}
+.reveal-blur {
+  filter: blur(10px);
+}
+.reveal-blur.is-visible {
+  filter: blur(0);
+}
+
+/* Staggered inner-element reveal ("cards appearing sequentially", section 7)
+   - each feature's visual has its own small list of rows/chips/nodes; once
+   the row's own .reveal transition fires (is-visible added), these fade/
+   rise in one after another rather than all at once, via a plain per-item
+   transition-delay. Gated on the SAME .is-visible class the row already
+   uses, not a second observer - one scroll trigger, two layers of motion.
+   Listed explicitly per class (not a generic ".landing-visual-card > *")
+   since some of these sit one element deeper than others (e.g. RAG steps
+   are inside .landing-rag-flow, not a direct child of the card). */
+.landing-memory-turn,
+.landing-rag-step,
+.landing-citation-chip,
+.landing-history-mock-item,
+.landing-reliability-node {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 450ms ease, transform 450ms ease;
+}
+.reveal.is-visible .landing-memory-turn,
+.reveal.is-visible .landing-rag-step,
+.reveal.is-visible .landing-citation-chip,
+.reveal.is-visible .landing-history-mock-item,
+.reveal.is-visible .landing-reliability-node {
+  opacity: 1;
+  transform: translateY(0);
+}
+.landing-memory-turn:nth-child(1) { transition-delay: 60ms; }
+.landing-memory-turn:nth-child(2) { transition-delay: 160ms; }
+.landing-memory-turn:nth-child(3) { transition-delay: 260ms; }
+.landing-memory-turn:nth-child(4) { transition-delay: 360ms; }
+
+.landing-rag-step:nth-of-type(1) { transition-delay: 60ms; }
+.landing-rag-step:nth-of-type(2) { transition-delay: 180ms; }
+.landing-rag-step:nth-of-type(3) { transition-delay: 300ms; }
+.landing-rag-step:nth-of-type(4) { transition-delay: 420ms; }
+
+.landing-citation-chip:nth-of-type(1) { transition-delay: 200ms; }
+.landing-citation-chip:nth-of-type(2) { transition-delay: 320ms; }
+
+.landing-history-mock-item:nth-of-type(1) { transition-delay: 60ms; }
+.landing-history-mock-item:nth-of-type(2) { transition-delay: 170ms; }
+.landing-history-mock-item:nth-of-type(3) { transition-delay: 280ms; }
+
+.landing-reliability-node:nth-of-type(1) { transition-delay: 60ms; }
+.landing-reliability-node:nth-of-type(2) { transition-delay: 220ms; }
+.landing-reliability-node:nth-of-type(3) { transition-delay: 380ms; }
+
+/* ==========================================================================
+   Header / navbar (section 18)
+   ========================================================================== */
+.landing-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: rgba(3, 3, 3, 0.72);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--ink-border);
+}
+
+.landing-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--ink-text);
+  text-decoration: none;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.landing-brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2em;
+  height: 2em;
+  border-radius: var(--ink-radius-sm);
+  background: var(--gold-gradient);
+  color: var(--ink);
+  font-size: 0.95rem;
+  flex-shrink: 0;
+}
+
+.landing-nav-link {
+  color: var(--ink-text-secondary);
+  text-decoration: none;
+  font-size: 0.92rem;
+  font-weight: 500;
+  transition: color var(--ink-transition);
+  position: relative;
+}
+.landing-nav-link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 100%;
+  bottom: -4px;
+  height: 1px;
+  background: var(--gold);
+  transition: right var(--ink-transition);
+}
+.landing-nav-link:hover {
+  color: var(--ink-text);
+}
+.landing-nav-link:hover::after {
+  right: 0;
+}
+
+.landing-user-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: transparent;
+  border: none;
+  color: var(--ink-text);
+  border-radius: var(--ink-radius-pill, 999px);
+  padding: 0.25rem 0.5rem 0.25rem 0.25rem;
+  transition: background var(--ink-transition);
+}
+.landing-user-pill:hover {
+  background: var(--ink-3);
+}
+.landing-user-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--gold-gradient);
+  color: var(--ink);
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   Hero (sections 4-5)
+   ========================================================================== */
+.landing-hero {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(3rem, 8vw, 7rem) 0 clamp(2.5rem, 6vw, 5rem);
+}
+
+.landing-hero-heading {
+  font-family: 'Fraunces', Georgia, serif;
+  font-optical-sizing: auto;
+  font-size: clamp(2.4rem, 5.5vw, 4.2rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  margin: 0.75rem 0 1.25rem;
+}
+
+.landing-hero-sub {
+  font-size: clamp(1.05rem, 1.6vw, 1.25rem);
+  color: var(--ink-text-secondary);
+  max-width: 46ch;
+  line-height: 1.6;
+}
+
+.landing-hero-ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  margin-top: 2rem;
+}
+
+/* Floating mock chat window - the hero visual (Phase 15 section 5, Option A) */
+@keyframes landing-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+.landing-mock-window {
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(180deg, var(--ink-3) 0%, var(--ink-2) 100%);
+  border: 1px solid var(--ink-border-strong);
+  border-radius: var(--ink-radius-lg);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(217, 169, 76, 0.06);
+  animation: landing-float 6s ease-in-out infinite;
+  max-width: 420px;
+}
+.landing-mock-titlebar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.1rem;
+  border-bottom: 1px solid var(--ink-border);
+}
+.landing-mock-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--ink-border-strong);
+}
+.landing-mock-body {
+  padding: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.landing-mock-bubble {
+  border-radius: var(--ink-radius-md);
+  padding: 0.6rem 0.85rem;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  max-width: 88%;
+}
+.landing-mock-bubble.is-user {
+  align-self: flex-end;
+  background: var(--gold-gradient);
+  color: var(--ink);
+  font-weight: 500;
+  border-bottom-right-radius: 4px;
+}
+.landing-mock-bubble.is-ai {
+  align-self: flex-start;
+  background: var(--ink-1);
+  border: 1px solid var(--ink-border);
+  color: var(--ink-text-secondary);
+  border-bottom-left-radius: 4px;
+}
+.landing-mock-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid var(--ink-border);
+}
+.landing-mock-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  color: var(--gold);
+  background: var(--gold-soft);
+  border: 1px solid var(--gold-border);
+  border-radius: 999px;
+  padding: 0.25rem 0.6rem;
+}
+
+/* ==========================================================================
+   Feature sections (sections 6-11)
+   ========================================================================== */
+.landing-section {
+  position: relative;
+  padding: clamp(3rem, 7vw, 6rem) 0;
+}
+.landing-section-heading {
+  font-family: 'Fraunces', Georgia, serif;
+  font-optical-sizing: auto;
+  font-size: clamp(1.7rem, 3vw, 2.4rem);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  margin: 0.6rem 0 1rem;
+}
+.landing-section-body {
+  color: var(--ink-text-secondary);
+  font-size: 1.05rem;
+  line-height: 1.7;
+  max-width: 50ch;
+}
+
+.landing-feature-row {
+  display: flex;
+  align-items: center;
+  gap: clamp(2rem, 5vw, 4.5rem);
+}
+.landing-feature-row.is-reversed {
+  flex-direction: row-reverse;
+}
+.landing-feature-text,
+.landing-feature-visual {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.landing-visual-card {
+  background: linear-gradient(180deg, var(--ink-3) 0%, var(--ink-2) 100%);
+  border: 1px solid var(--ink-border-strong);
+  border-radius: var(--ink-radius-lg);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  padding: 1.5rem;
+}
+
+/* Memory demo */
+.landing-memory-turn {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.88rem;
+}
+.landing-memory-turn + .landing-memory-turn {
+  margin-top: 0.9rem;
+  padding-top: 0.9rem;
+  border-top: 1px dashed var(--ink-border);
+}
+.landing-memory-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-text-muted);
+}
+.landing-memory-text {
+  color: var(--ink-text-secondary);
+  line-height: 1.55;
+}
+.landing-memory-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  align-self: flex-start;
+  margin-top: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--gold);
+  background: var(--gold-soft);
+  border: 1px solid var(--gold-border);
+  border-radius: 999px;
+  padding: 0.3rem 0.7rem;
+}
+
+/* RAG demo */
+.landing-rag-flow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+}
+.landing-rag-step {
+  width: 100%;
+  text-align: center;
+  border: 1px solid var(--ink-border);
+  background: var(--ink-1);
+  border-radius: var(--ink-radius-md);
+  padding: 0.7rem 1rem;
+  font-size: 0.85rem;
+  color: var(--ink-text-secondary);
+}
+.landing-rag-step.is-accent {
+  border-color: var(--gold-border);
+  background: var(--gold-soft);
+  color: var(--gold);
+  font-weight: 600;
+}
+.landing-rag-arrow {
+  color: var(--ink-text-muted);
+  line-height: 1;
+}
+
+/* Web search demo */
+.landing-search-mock-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--gold-soft);
+  border: 1px solid var(--gold-border);
+  color: var(--gold);
+  border-radius: 999px;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  width: fit-content;
+}
+.landing-citation-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  color: var(--ink-text-secondary);
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--ink-border);
+}
+.landing-citation-chip:last-child {
+  border-bottom: none;
+}
+
+/* Conversation history demo (illustrative only, not real data - see
+   RecentConversations.tsx for the real-data version on the personalized
+   landing page) */
+.landing-history-mock-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: var(--ink-radius-sm);
+  font-size: 0.85rem;
+  color: var(--ink-text-secondary);
+}
+.landing-history-mock-item + .landing-history-mock-item {
+  margin-top: 0.15rem;
+}
+.landing-history-mock-item.is-highlighted {
+  background: var(--gold-soft);
+  color: var(--ink-text);
+}
+
+/* Reliability demo */
+.landing-reliability-flow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.landing-reliability-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: var(--ink-text-secondary);
+  text-align: center;
+}
+.landing-reliability-node-mark {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--ink-border-strong);
+  background: var(--ink-1);
+  color: var(--ink-text);
+}
+.landing-reliability-node-mark.is-accent {
+  border-color: var(--gold-border);
+  background: var(--gold-soft);
+  color: var(--gold);
+}
+.landing-reliability-connector {
+  flex: 1 1 24px;
+  min-width: 24px;
+  height: 1px;
+  background: repeating-linear-gradient(90deg, var(--ink-border-strong) 0 6px, transparent 6px 12px);
+}
+
+/* ==========================================================================
+   Cards (section 16)
+   ========================================================================== */
+.landing-card {
+  background: var(--ink-2);
+  border: 1px solid var(--ink-border);
+  border-radius: var(--ink-radius-lg);
+  transition: border-color var(--ink-transition), transform var(--ink-transition), box-shadow var(--ink-transition);
+}
+.landing-card:hover {
+  border-color: var(--gold-border);
+  transform: translateY(-3px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+}
+.landing-card-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--ink-radius-md);
+  background: var(--gold-soft);
+  color: var(--gold);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+
+/* Staggered card entrance for FeatureHighlights (personalized landing) -
+   same pattern as the marketing page's visual-internal stagger above, just
+   applied to a plain card grid instead of a mock UI. */
+.landing-highlight-card {
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 450ms ease, transform 450ms ease, border-color var(--ink-transition), box-shadow var(--ink-transition);
+}
+.reveal.is-visible .landing-highlight-card {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ==========================================================================
+   Final CTA (section 19)
+   ========================================================================== */
+.landing-cta-panel {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--ink-radius-lg);
+  border: 1px solid var(--gold-border);
+  background: radial-gradient(120% 140% at 50% 0%, rgba(217, 169, 76, 0.14) 0%, var(--ink-2) 60%);
+  padding: clamp(2.5rem, 6vw, 4.5rem) clamp(1.5rem, 5vw, 3.5rem);
+  text-align: center;
+}
+
+/* ==========================================================================
+   Footer (section 20)
+   ========================================================================== */
+.landing-footer {
+  border-top: 1px solid var(--ink-border);
+  color: var(--ink-text-muted);
+  font-size: 0.85rem;
+}
+
+/* ==========================================================================
+   Personalized (logged-in) landing (sections 3, 12, 13)
+   ========================================================================== */
+.landing-personalized-header {
+  border-bottom: 1px solid var(--ink-border);
+  background: var(--ink);
+  flex-shrink: 0;
+}
+
+.landing-greeting {
+  font-family: 'Fraunces', Georgia, serif;
+  font-optical-sizing: auto;
+  font-size: clamp(1.6rem, 3.2vw, 2.3rem);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.landing-recent-card {
+  background: var(--ink-2);
+  border: 1px solid var(--ink-border);
+  border-radius: var(--ink-radius-lg);
+}
+
+.landing-recent-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1.1rem;
+  border-radius: var(--ink-radius-md);
+  text-decoration: none;
+  color: var(--ink-text);
+  transition: background var(--ink-transition);
+}
+.landing-recent-item:hover {
+  background: var(--ink-3);
+  color: var(--ink-text);
+}
+.landing-recent-item-title {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.landing-recent-item-time {
+  flex-shrink: 0;
+  font-size: 0.78rem;
+  color: var(--ink-text-muted);
+}
+
+.landing-new-chat-card {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  background: var(--gold-gradient);
+  color: var(--ink);
+  border: none;
+  border-radius: var(--ink-radius-lg);
+  padding: 1.1rem 1.35rem;
+  font-weight: 600;
+  text-align: left;
+  width: 100%;
+  transition: transform var(--ink-transition), box-shadow var(--ink-transition);
+}
+.landing-new-chat-card:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 36px var(--gold-glow);
+}
+.landing-new-chat-card:disabled {
+  opacity: 0.7;
+}
+
+/* Reuses the app's existing ChatSidebar/SidebarProvider - only the
+   surrounding chrome (background, border) needs re-theming to sit inside
+   the black/gold page instead of the app's default surface color. */
+.landing-page .app-sidebar {
+  background: var(--ink-1);
+  border-color: var(--ink-border) !important;
+}
+.landing-page .chat-item:hover {
+  background: var(--ink-3);
+}
+.landing-page .chat-item.active {
+  background: var(--gold-soft);
+}
+.landing-page .chat-item.active::before {
+  background: var(--gold-gradient);
+}
+.landing-page .chat-item-link {
+  color: var(--ink-text-secondary);
+}
+.landing-page .chat-item.active .chat-item-link {
+  color: var(--ink-text);
+}
+.landing-page .new-chat-btn {
+  background: var(--ink-2);
+  border-color: var(--ink-border);
+  color: var(--ink-text);
+}
+.landing-page .new-chat-btn:hover:not(:disabled) {
+  background: var(--ink-3);
+  border-color: var(--gold-border);
+}
+.landing-page .sidebar-icon-btn {
+  color: var(--ink-text-secondary);
+}
+.landing-page .sidebar-icon-btn:hover {
+  background: var(--ink-3);
+  color: var(--ink-text);
+}
+.landing-page .chat-group-label {
+  color: var(--ink-text-muted);
+}
+
+/* ==========================================================================
+   Responsive (section 21)
+   ========================================================================== */
+@media (max-width: 991.98px) {
+  .landing-feature-row,
+  .landing-feature-row.is-reversed {
+    flex-direction: column;
+  }
+  .landing-feature-text,
+  .landing-feature-visual {
+    flex: 1 1 auto;
+    width: 100%;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .landing-hero-ctas {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .landing-hero-ctas .landing-btn-primary,
+  .landing-hero-ctas .landing-btn-secondary {
+    justify-content: center;
+  }
+  .landing-mock-window {
+    max-width: 100%;
+  }
+}
