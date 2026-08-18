@@ -6,7 +6,7 @@ new ModelService implementation and changing the one place that constructs it
 (app/api/deps.py) - the node and graph stay untouched.
 """
 from abc import ABC, abstractmethod
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncIterator
 from typing import Literal, NotRequired, TypedDict
 
 
@@ -79,18 +79,6 @@ class ModelToolResponse(TypedDict):
     tool_calls: list[ToolCall]
 
 
-class SearchCitation(TypedDict):
-    """A citation a provider's own built-in search/tool-use surfaced while
-    generating a response (Phase 14.6, e.g. Groq's compound models) - kept
-    provider-agnostic (not tied to Groq's specific tool-call shape) so
-    generate()/generate_stream()'s on_search_result callback stays a generic
-    interface concept, not a Groq-specific bolt-on. Implementations with no
-    built-in search (Gemini, plain Groq chat models) simply never call it."""
-
-    title: str
-    url: str
-
-
 class ProviderUnavailableError(Exception):
     """Raised by a ModelService implementation to signal a TRANSIENT,
     provider-level failure - rate limit, quota exhausted, service
@@ -108,32 +96,15 @@ class ProviderUnavailableError(Exception):
 
 class ModelService(ABC):
     @abstractmethod
-    async def generate(
-        self,
-        history: list[ModelTurn],
-        *,
-        on_search_result: Callable[[SearchCitation], None] | None = None,
-    ) -> str:
+    async def generate(self, history: list[ModelTurn]) -> str:
         """Given the conversation so far (oldest first, ending with the
-        latest user turn), return the model's full text response.
-
-        on_search_result is called once per citation IF this provider does
-        its own search/tool use while generating (see SearchCitation) -
-        providers without that capability simply never call it. This is
-        metadata about the response, never part of the returned text."""
+        latest user turn), return the model's full text response."""
         raise NotImplementedError
 
     @abstractmethod
-    def generate_stream(
-        self,
-        history: list[ModelTurn],
-        *,
-        on_search_result: Callable[[SearchCitation], None] | None = None,
-    ) -> AsyncIterator[str]:
+    def generate_stream(self, history: list[ModelTurn]) -> AsyncIterator[str]:
         """Given the conversation so far, yield the response incrementally as
-        text chunks. See generate()'s on_search_result docstring - same
-        contract, called as citations are discovered mid-stream rather than
-        all at once."""
+        text chunks."""
         raise NotImplementedError
 
     @abstractmethod

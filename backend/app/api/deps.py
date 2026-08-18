@@ -34,6 +34,7 @@ from app.services.fallback_model_service import FallbackModelService
 from app.services.gemini_service import GeminiService
 from app.services.groq_service import GroqService
 from app.services.model_service import ModelService
+from app.services.tavily_service import TavilySearchService
 
 DbSession = Annotated[AsyncSession, Depends(get_db)]
 RedisClient = Annotated[Redis, Depends(get_redis)]
@@ -62,10 +63,6 @@ MessageRepo = Annotated[MessageRepository, Depends(get_message_repository)]
 
 @lru_cache
 def _get_gemini_service() -> GeminiService:
-    # Shared by get_model_service() and get_web_search_model_service() -
-    # both want a Gemini instance (as primary for one, fallback for the
-    # other), and there's no reason to hold two separate genai.Client
-    # objects/connections for the same API key.
     settings = get_settings()
     return GeminiService(api_key=settings.GEMINI_API_KEY, model=settings.GEMINI_MODEL)
 
@@ -73,13 +70,15 @@ def _get_gemini_service() -> GeminiService:
 @lru_cache
 def get_model_service() -> ModelService:
     """The one place that decides which model provider(s) handle
-    routing/normal/RAG (Phase 14.5). Everything downstream (the graph, the
-    router and model nodes, ChatExecutionService) depends only on the
-    ModelService interface - it has no idea whether it's holding a bare
-    GeminiService, a bare GroqService, or a FallbackModelService wrapping
-    both, so adding/removing/reordering providers only ever means changing
-    this function. See get_web_search_model_service() below for the
-    web_search route's separate (reversed) provider pairing.
+    routing/normal/RAG/web-search-generation (Phase 14.5; web search joined
+    this shared pairing in Phase 18 once Tavily took over retrieval and
+    Groq's compound-mini was retired - there is no separate provider
+    pairing for any route anymore). Everything downstream (the graph, the
+    router/model/web-search-answer nodes, ChatExecutionService) depends only
+    on the ModelService interface - it has no idea whether it's holding a
+    bare GeminiService, a bare GroqService, or a FallbackModelService
+    wrapping both, so adding/removing/reordering providers only ever means
+    changing this function.
 
     LLM_PROVIDER=groq is a development-only escape hatch (Phase 14.5 doc
     section 15) for testing Groq directly without wrapping it in fallback
@@ -106,30 +105,17 @@ def get_model_service() -> ModelService:
 
 
 @lru_cache
-def get_web_search_model_service() -> ModelService:
-    """The web_search route's own provider pairing (Phase 14.6) - Groq's
-    compound-mini PRIMARY (it does its own live web search while
-    generating), Gemini FALLBACK. This is the reverse of get_model_service()
-    above: for this one route, the search capability is the entire reason
-    to call Groq, so it isn't relegated to fallback duty here. Only the
-    web_search node (app/langgraph/nodes/web_search_node.py) uses this -
-    routing/normal/RAG never do.
-
-    Without a GROQ_API_KEY, this degrades to bare Gemini - same "the app
-    still starts, just without the extra capability" pattern as
-    get_model_service() - so a turn explicitly routed to web_search still
-    gets an answer (from Gemini's own knowledge), just without live search,
-    rather than crashing.
-    """
+def get_tavily_service() -> TavilySearchService:
+    """The web_search route's retrieval layer (Phase 18, replacing Groq
+    compound-mini). Only web_search_node.py uses this - routing/normal/RAG
+    never do. Without a TAVILY_API_KEY, TavilySearchService.configured is
+    False and web_search_node.py degrades to an ungrounded answer rather
+    than crashing (see that module and app/services/tavily_service.py)."""
     settings = get_settings()
-    gemini = _get_gemini_service()
-
-    if not settings.GROQ_API_KEY:
-        return gemini
-
-    compound = GroqService(api_key=settings.GROQ_API_KEY, model=settings.GROQ_COMPOUND_MODEL)
-    return FallbackModelService(
-        compound, gemini, primary_name="groq-compound", fallback_name="gemini"
+    return TavilySearchService(
+        api_key=settings.TAVILY_API_KEY,
+        max_results=settings.WEB_SEARCH_MAX_RESULTS,
+        timeout_seconds=settings.WEB_SEARCH_TIMEOUT_SECONDS,
     )
 
 

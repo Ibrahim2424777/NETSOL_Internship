@@ -1,86 +1,60 @@
-"""Web search node (Phase 14.6) - the terminal node on the "web_search"
-branch of the chat graph.
+"""Web search retrieval node (Phase 18, rewritten from Phase 14.6's
+compound-mini implementation) - the first node on the "web_search" branch of
+the chat graph, converging on web_search_answer_node.py for generation (see
+chat_graph.py).
 
-Unlike the RAG/model split (retrieve structured data, then hand it to a
-separate model node to write the answer), this node's model call - Groq's
-groq/compound-mini - does its own web search AND writes the final answer in
-one step, so there's no separate retrieval-then-generation here. That's why
-this branch does NOT converge on the shared model node the way "rag" and
-"normal" do (see chat_graph.py): there's nothing left for that node to do.
-
-The ModelService this node is built with (see app/api/deps.py) is expected
-to be compound-mini wrapped as PRIMARY with Gemini as FALLBACK - the reverse
-of the app's default Gemini-primary/Groq-fallback pairing used everywhere
-else, because for this one route the search capability itself is the reason
-to call Groq at all. Gemini has no equivalent built-in search in this
-integration, so a Gemini fallback here means "answer from its own general
-knowledge, without live search" rather than "search a different way" - still
-strictly better than the turn failing outright.
+Previously this node's model call (Groq's compound-mini) did its own
+autonomous web search AND wrote the final answer in one step. That's been
+replaced: compound-mini could (and reproducibly did, live) attempt to
+retrieve too many/too-large pages and fail the whole turn with a 413 on
+ordinary queries - not fixable from this app's side (see groq_service.py's
+git history for what was tried). Tavily now owns retrieval exclusively, and
+this node's only job is turning the user's question into a bounded set of
+search results - the same retrieve-then-generate split RAG already uses
+(retriever_node.py + model_node.py), kept as its own separate system rather
+than merged with RAG (different content, different citation shape,
+different failure modes - see app/langgraph/state.py).
 """
 import logging
 from collections.abc import Awaitable, Callable
 
-from langchain_core.messages import AIMessage, AnyMessage, HumanMessage
-from langgraph.config import get_stream_writer
+from langchain_core.messages import AnyMessage, HumanMessage
 
-from app.langgraph.state import ChatState, WebSearchSource
-from app.services.model_service import ModelService, ModelTurn, SearchCitation
+from app.langgraph.state import ChatState
+from app.services.tavily_service import TavilyError, TavilySearchService
 
 logger = logging.getLogger(__name__)
 
-_WEB_SEARCH_INSTRUCTIONS = (
-    "Instructions: Answer with the most current, accurate information you "
-    "can. This question involves time-sensitive details (dates, scores, "
-    "prices, schedules, current events, recent news) - if you are not "
-    "confident your knowledge is current, say so clearly instead of "
-    "guessing."
-)
 
-
-def _to_turn(message: AnyMessage) -> ModelTurn:
-    role = "user" if isinstance(message, HumanMessage) else "model"
-    content = message.content if isinstance(message.content, str) else str(message.content)
-    return {"role": role, "content": content}
-
-
-def _build_search_turns(history: list[ModelTurn]) -> list[ModelTurn]:
-    if not history or history[-1]["role"] != "user":
-        return history
-    augmented = f"{history[-1]['content']}\n\n{_WEB_SEARCH_INSTRUCTIONS}"
-    return [*history[:-1], {"role": "user", "content": augmented}]
+def _latest_user_query(messages: list[AnyMessage]) -> str | None:
+    for message in reversed(messages):
+        if isinstance(message, HumanMessage):
+            return message.content if isinstance(message.content, str) else str(message.content)
+    return None
 
 
 def make_web_search_node(
-    model_service: ModelService, *, max_history_messages: int
+    tavily_service: TavilySearchService,
 ) -> Callable[[ChatState], Awaitable[ChatState]]:
     async def web_search_node(state: ChatState) -> ChatState:
-        trimmed = state["messages"][-max_history_messages:]
-        history = _build_search_turns([_to_turn(message) for message in trimmed])
+        query = _latest_user_query(state["messages"])
+        if query is None:
+            return {"web_search_results": [], "web_search_sources": []}
 
-        # Ordered de-dup by URL: compound-mini can (and often does) run
-        # several searches for one answer, sometimes surfacing the same
-        # page more than once across them - the UI wants one chip per
-        # distinct source, not one per search call.
-        seen_urls: set[str] = set()
-        sources: list[WebSearchSource] = []
+        try:
+            results = await tavily_service.search(query)
+        except TavilyError as exc:
+            # Graceful degradation (Phase 18 doc section 15) - the answer
+            # node still runs; it just has nothing to ground a reply in,
+            # and its own instructions tell the model to say so rather than
+            # guess (see web_search_answer_node.py's _NO_RESULTS_INSTRUCTIONS).
+            # Same "degrade, don't crash the turn" precedent as MCP's
+            # list_tools() failure in agent_node.py.
+            logger.warning("Tavily search failed for web_search route: %s", exc)
+            results = []
 
-        def on_search_result(citation: SearchCitation) -> None:
-            if citation["url"] in seen_urls:
-                return
-            seen_urls.add(citation["url"])
-            sources.append({"title": citation["title"], "url": citation["url"]})
-
-        writer = get_stream_writer()
-        chunks: list[str] = []
-        async for chunk in model_service.generate_stream(history, on_search_result=on_search_result):
-            chunks.append(chunk)
-            writer(chunk)
-
-        full_response = "".join(chunks)
-        if not full_response:
-            raise RuntimeError("Model service returned an empty response")
-
-        logger.debug("web_search_node found %d source(s)", len(sources))
-        return {"messages": [AIMessage(content=full_response)], "web_search_sources": sources}
+        logger.debug("web_search_node found %d result(s) for query %r", len(results), query)
+        sources = [{"title": result["title"], "url": result["url"]} for result in results]
+        return {"web_search_results": results, "web_search_sources": sources}
 
     return web_search_node

@@ -10,7 +10,7 @@ export default function LoginPage() {
   const authError = (location.state as { authError?: string } | null)?.authError;
 
   if (!isLoading && isAuthenticated) {
-    return <Navigate to="/chat" replace />;
+    return <Navigate to="/" replace />;
   }
 
   return (

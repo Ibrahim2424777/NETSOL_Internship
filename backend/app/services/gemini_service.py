@@ -67,10 +67,7 @@ class GeminiService(ModelService):
         self._client = genai.Client(api_key=api_key)
         self._model = model
 
-    async def generate(self, history: list[ModelTurn], *, on_search_result=None) -> str:
-        # Gemini has no built-in search/tool-use in this integration -
-        # on_search_result is accepted for interface conformance but never
-        # called.
+    async def generate(self, history: list[ModelTurn]) -> str:
         try:
             response = await self._client.aio.models.generate_content(
                 model=self._model,
@@ -86,7 +83,7 @@ class GeminiService(ModelService):
 
         return response.text
 
-    async def generate_stream(self, history: list[ModelTurn], *, on_search_result=None) -> AsyncIterator[str]:
+    async def generate_stream(self, history: list[ModelTurn]) -> AsyncIterator[str]:
         try:
             # generate_content_stream returns a coroutine that resolves to
             # the actual async iterator - it must be awaited before iterating.

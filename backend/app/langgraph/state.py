@@ -34,11 +34,22 @@ the router - it's how the frontend's explicit "web search" toggle reaches the
 graph. When True, router_node short-circuits straight to route="web_search"
 without spending a classification call on it (see router_node.py) - this is
 the one route the classifier itself never chooses on its own; it's always an
-explicit user override. See app/langgraph/nodes/web_search_node.py for how
-that route's actual response generation works - unlike RAG/sports before it,
-the web_search branch does NOT converge on the shared model node, since
-Groq's compound-mini generates the final grounded answer itself in one step
-rather than retrieving-then-generating.
+explicit user override.
+
+`web_search_results` (Phase 18) is the web_search route's own
+retrieve-then-generate handoff, mirroring `retrieved_context` exactly but
+kept as a SEPARATE field on purpose (Phase 18 doc section 12: RAG and web
+search are different systems - private/document knowledge vs. the public
+web via Tavily - and merging their state would blur that distinction for no
+benefit). app/langgraph/nodes/web_search_node.py (Tavily retrieval) writes
+it; web_search_answer_node.py (grounded generation, via the same
+Gemini/Groq ModelService normal/RAG use) reads it and clears nothing itself
+- like retrieved_context, it's overwritten fresh every turn by the node
+that owns it. `web_search_sources` is the citation-only subset (title/url)
+of the same Tavily response, set at the same time - unlike Phase 14.6,
+citations no longer depend on parsing a model's own tool-use output, since
+Tavily returns them directly at retrieval time, before generation even
+starts.
 
 `tool_calls_made` (Phase 17) is observability-only, the same role `route`
 plays for the router - agent_node.py records which MCP tool(s) it actually
@@ -60,14 +71,15 @@ from typing import Annotated, Literal, TypedDict
 from langchain_core.messages import AnyMessage
 from langgraph.graph.message import add_messages
 
+from app.services.tavily_service import TavilySearchResult
 from app.services.vector_store_service import RetrievedChunk
 
 Route = Literal["normal", "rag", "web_search"]
 
 
 class WebSearchSource(TypedDict):
-    """One citation Groq's compound-mini search tool surfaced for the
-    current turn - see web_search_node.py's _extract_sources."""
+    """One citation for the current turn's web search reply - title/url
+    only, normalized from a TavilySearchResult (see web_search_node.py)."""
 
     title: str
     url: str
@@ -76,6 +88,7 @@ class WebSearchSource(TypedDict):
 class ChatState(TypedDict):
     messages: Annotated[list[AnyMessage], add_messages]
     retrieved_context: list[RetrievedChunk]
+    web_search_results: list[TavilySearchResult]
     web_search_sources: list[WebSearchSource]
     web_search_requested: bool
     tool_calls_made: list[str]

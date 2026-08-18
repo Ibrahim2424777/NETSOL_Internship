@@ -27,6 +27,7 @@ dependencies = [
     "lancedb>=0.36.0",
     "groq>=1.6.0",
     "mcp>=2.0.0",
+    "tavily-python>=0.7.27",
 ]
 
 [tool.uv]

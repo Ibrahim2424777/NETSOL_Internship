@@ -1,6 +1,7 @@
 """Agent node (Phase 17) - the "normal" route's destination, replacing plain
-model_node.py for that branch only (RAG still uses model_node unchanged;
-web_search still uses web_search_node unchanged - see chat_graph.py).
+model_node.py for that branch only (RAG uses model_node; web_search uses its
+own retrieve-then-generate pair, web_search_node.py + web_search_answer_node.py
+- see chat_graph.py).
 
 Gives the model access to whatever tools the standalone MCP server
 (../mcp-server) currently exposes - weather, and email if configured - via
@@ -17,10 +18,10 @@ generate_with_tools() call (see model_service.py). Once a final answer is
 reached, its text is already complete - _fake_stream() re-chunks it into
 small pieces with a short delay between writer() calls so the frontend still
 gets a typing-effect UI, but this is not real token streaming from the
-provider. This is the same tradeoff web_search_node.py already made for
-Groq's compound-mini (also non-streaming under the hood) - Phase 17 extends
-it to the normal route's tool-using turns rather than inventing a new
-compromise.
+provider. This is the one place in the graph that still needs this
+trick - web_search_answer_node.py (like model_node.py) streams for real,
+since Tavily already did the retrieval before generation ever starts, so
+there's no "might this turn into a tool call" ambiguity to wait out there.
 
 PRIVACY: the tool_call/result exchanges that happen mid-loop (e.g. a
 send_email call and its result, or an email's content from read_email) are

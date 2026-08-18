@@ -36,7 +36,10 @@ export default function AuthCallbackPage() {
     }
 
     completeGoogleLogin(code)
-      .then(() => navigate('/chat', { replace: true }))
+      // Land on the home/landing page after sign-in, not straight into a
+      // chat - the personalized landing (see LandingPage.tsx) is the
+      // intended first stop, with its own way into a new or recent chat.
+      .then(() => navigate('/', { replace: true }))
       .catch(() =>
         navigate('/login', { replace: true, state: { authError: 'Sign-in failed. Please try again.' } }),
       );

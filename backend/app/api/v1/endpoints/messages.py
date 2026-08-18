@@ -181,9 +181,10 @@ async def _retrieved_sources(
 async def _web_search_sources(
     execution: ChatExecutionService, chat_id: uuid.UUID
 ) -> list[MessageSource] | None:
-    """Web-search counterpart to _retrieved_sources (Phase 14.6) - reads
-    back compound-mini's citations for this turn, if any. None (not []) when
-    nothing was found, matching _retrieved_sources' convention."""
+    """Web-search counterpart to _retrieved_sources (Phase 14.6, Tavily
+    retrieval as of Phase 18) - reads back this turn's search citations, if
+    any. None (not []) when nothing was found, matching _retrieved_sources'
+    convention."""
     try:
         citations = await execution.get_web_search_sources(chat_id)
     except Exception:

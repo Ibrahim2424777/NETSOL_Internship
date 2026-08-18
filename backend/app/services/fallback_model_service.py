@@ -16,14 +16,13 @@ failure that isn't about provider availability could hide a real bug and
 burns fallback-provider quota for nothing.
 """
 import logging
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncIterator
 
 from app.services.model_service import (
     ModelService,
     ModelToolResponse,
     ModelTurn,
     ProviderUnavailableError,
-    SearchCitation,
     ToolExchange,
     ToolSpec,
 )
@@ -45,14 +44,9 @@ class FallbackModelService(ModelService):
         self._primary_name = primary_name
         self._fallback_name = fallback_name
 
-    async def generate(
-        self,
-        history: list[ModelTurn],
-        *,
-        on_search_result: Callable[[SearchCitation], None] | None = None,
-    ) -> str:
+    async def generate(self, history: list[ModelTurn]) -> str:
         try:
-            result = await self._primary.generate(history, on_search_result=on_search_result)
+            result = await self._primary.generate(history)
             logger.info("LLM provider: %s", self._primary_name)
             return result
         except ProviderUnavailableError:
@@ -61,22 +55,14 @@ class FallbackModelService(ModelService):
             logger.warning(
                 "%s unavailable - falling back to %s", self._primary_name, self._fallback_name
             )
-            # Not passed through to the fallback call: a citation callback
-            # is meaningless once we've switched away from the provider that
-            # was actually going to use it to report ITS OWN search results.
             result = await self._fallback.generate(history)
             logger.info("LLM provider: %s", self._fallback_name)
             return result
 
-    async def generate_stream(
-        self,
-        history: list[ModelTurn],
-        *,
-        on_search_result: Callable[[SearchCitation], None] | None = None,
-    ) -> AsyncIterator[str]:
+    async def generate_stream(self, history: list[ModelTurn]) -> AsyncIterator[str]:
         yielded_any = False
         try:
-            async for chunk in self._primary.generate_stream(history, on_search_result=on_search_result):
+            async for chunk in self._primary.generate_stream(history):
                 yielded_any = True
                 yield chunk
             logger.info("LLM provider: %s", self._primary_name)

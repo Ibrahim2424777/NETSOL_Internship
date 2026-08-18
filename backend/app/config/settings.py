@@ -127,16 +127,17 @@ class Settings(BaseSettings):
     # Groq key is configured.
     LLM_FALLBACK_PROVIDER: str = "groq"
 
-    # --- Web search (Phase 14.6) ---
-    # groq/compound-mini, not the larger groq/compound - the full compound
-    # model returned a 413 "Request Entity Too Large" on ordinary,
-    # non-trivial prompts in live testing (a currently-reported Groq issue,
-    # not something on our end), while compound-mini handled the same
-    # prompts reliably and still does real web search + returns citations.
-    # This is the PRIMARY provider for the web_search route specifically -
-    # the reverse of GROQ_MODEL's role, which is the FALLBACK for
-    # normal/rag. Gemini is web search's fallback (see app/api/deps.py).
-    GROQ_COMPOUND_MODEL: str = "groq/compound-mini"
+    # --- Web search (Phase 14.6, retrieval replaced with Tavily in Phase 18) ---
+    # Not required (empty default) - without it, the web_search route still
+    # works, it just degrades to an ungrounded answer from the model's own
+    # knowledge (see app/langgraph/nodes/web_search_node.py) rather than
+    # failing the app to start. Get a key at https://tavily.com.
+    TAVILY_API_KEY: str = ""
+    # Deliberately small (Phase 18 doc section 4: "do NOT retrieve dozens of
+    # pages") - Tavily's own default is also 5, made explicit/tunable here
+    # rather than relying on the SDK's default staying what it is today.
+    WEB_SEARCH_MAX_RESULTS: int = 5
+    WEB_SEARCH_TIMEOUT_SECONDS: float = 15.0
 
     # --- MCP (Phase 17) ---
     # The standalone MCP server (../mcp-server) - a separate process/project

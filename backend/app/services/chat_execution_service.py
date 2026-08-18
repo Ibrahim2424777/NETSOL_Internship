@@ -16,9 +16,11 @@ Phase 14 folded RAG retrieval into ONE graph with a router node choosing the
 path per turn (see app/langgraph/graphs/chat_graph.py) - run_stream/run don't
 mean "the RAG graph specifically"; which retrieval (if any) runs is an
 internal decision the graph makes for each message. Phase 14.6 replaced the
-"sports" route with "web_search" (Groq compound-mini, live web search) and
-made it a CALLER-supplied override rather than something the classifier ever
-infers - see run_stream's web_search parameter.
+"sports" route with "web_search" and made it a CALLER-supplied override
+rather than something the classifier ever infers - see run_stream's
+web_search parameter. Phase 18 replaced web_search's retrieval mechanism
+(Groq compound-mini's autonomous search) with Tavily; the override behavior
+itself is unchanged.
 """
 import uuid
 from collections.abc import AsyncIterator
@@ -32,6 +34,7 @@ from app.langgraph.state import ChatState, Route, WebSearchSource
 from app.mcp.client import MCPClientService
 from app.rag.retriever import Retriever
 from app.services.model_service import ModelService
+from app.services.tavily_service import TavilySearchService
 from app.services.vector_store_service import RetrievedChunk
 
 
@@ -39,7 +42,7 @@ class ChatExecutionService:
     def __init__(
         self,
         model_service: ModelService,
-        web_search_model_service: ModelService,
+        tavily_service: TavilySearchService,
         retriever: Retriever,
         mcp_client: MCPClientService,
         *,
@@ -50,7 +53,7 @@ class ChatExecutionService:
         self._checkpointer = checkpointer
         self._graph: CompiledStateGraph = build_chat_graph(
             model_service,
-            web_search_model_service,
+            tavily_service,
             retriever,
             mcp_client,
             checkpointer=checkpointer,
@@ -74,6 +77,7 @@ class ChatExecutionService:
         return {
             "messages": [HumanMessage(content=user_input)],
             "retrieved_context": [],
+            "web_search_results": [],
             "web_search_sources": [],
             "web_search_requested": web_search,
             "tool_calls_made": [],
@@ -140,9 +144,8 @@ class ChatExecutionService:
 
     async def get_web_search_sources(self, chat_id: uuid.UUID) -> list[WebSearchSource]:
         """Web-search counterpart to get_retrieved_sources - empty on any
-        turn that didn't route to web_search, or that did but compound-mini
-        fell back to Gemini (no search, no citations) or simply didn't need
-        to search to answer."""
+        turn that didn't route to web_search, or that did but Tavily
+        returned no results (see web_search_node.py)."""
         return await self._state_value(chat_id, "web_search_sources") or []
 
     async def get_tool_calls_made(self, chat_id: uuid.UUID) -> list[str]:
