@@ -12,10 +12,11 @@ instructions, a trimmed slice of history, a single-token-ish JSON reply) so
 the "don't waste API calls" concern the Phase 14 doc raises is a real,
 minimal cost, not a second full generation.
 
-Also resets retrieved_context to its empty default on EVERY turn, regardless
-of the chosen route - see app/langgraph/state.py's docstring for why this
-matters (without it, a route switch mid-conversation would leak the previous
-turn's stale retrieval into a route that never touched it this turn).
+Also resets retrieved_context and tool_calls_made to their empty defaults on
+EVERY turn, regardless of the chosen route - see app/langgraph/state.py's
+docstring for why this matters (without it, a route switch mid-conversation
+would leak the previous turn's stale retrieval/tool-usage into a route that
+never touched it this turn).
 
 Phase 14.6: "web_search" is deliberately NOT one of the classifier's choices.
 It's never inferred from the message text - it's an explicit, caller-supplied
@@ -71,7 +72,7 @@ def make_router_node(
     async def router_node(state: ChatState) -> ChatState:
         if state.get("web_search_requested"):
             logger.info("route=web_search (explicit override, no classification call)")
-            return {"route": "web_search", "retrieved_context": []}
+            return {"route": "web_search", "retrieved_context": [], "tool_calls_made": []}
 
         trimmed = state["messages"][-context_messages:]
         history = [_to_turn(message) for message in trimmed]
@@ -91,6 +92,6 @@ def make_router_node(
             route = "normal"
 
         logger.info("route=%s", route)
-        return {"route": route, "retrieved_context": []}
+        return {"route": route, "retrieved_context": [], "tool_calls_made": []}
 
     return router_node

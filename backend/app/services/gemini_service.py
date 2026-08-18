@@ -4,6 +4,7 @@ Nothing outside this file (and the settings it reads) knows this app talks to
 Gemini specifically - the rest of the AI layer only ever sees the ModelService
 interface.
 """
+import base64
 import json
 import logging
 from collections.abc import AsyncIterator
@@ -12,7 +13,15 @@ from google import genai
 from google.genai import errors as genai_errors
 from google.genai import types
 
-from app.services.model_service import ModelService, ModelTurn, ProviderUnavailableError
+from app.services.model_service import (
+    ModelService,
+    ModelToolResponse,
+    ModelTurn,
+    ProviderUnavailableError,
+    ToolCall,
+    ToolExchange,
+    ToolSpec,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -143,3 +152,89 @@ class GeminiService(ModelService):
             raise GeminiServiceError(f"Gemini returned an unrecognized classification: {choice!r}")
 
         return choice
+
+    async def generate_with_tools(
+        self,
+        history: list[ModelTurn],
+        *,
+        tools: list[ToolSpec],
+        exchanges: list[ToolExchange] | None = None,
+    ) -> ModelToolResponse:
+        contents = _to_contents(history)
+        for exchange in exchanges or []:
+            call = exchange["tool_call"]
+            # The model's own function-call turn, then our function-response
+            # turn - Gemini's required shape for continuing a tool-calling
+            # conversation. gemini-3.5-flash is a "thinking" model and
+            # requires the ORIGINAL thought_signature to be replayed on this
+            # part when there's more than one tool-calling round-trip in a
+            # turn (verified live: a single-exchange test worked without it,
+            # but a real 2-tool-offered agent loop failed with "Function
+            # call is missing a thought_signature... required for tools to
+            # work correctly" once a second call/response pair was added) -
+            # see ToolCall.provider_data in model_service.py.
+            raw_signature = call.get("provider_data", {}).get("thought_signature")
+            thought_signature = base64.b64decode(raw_signature) if raw_signature else None
+            contents.append(
+                types.Content(
+                    role="model",
+                    parts=[types.Part(
+                        function_call=types.FunctionCall(
+                            id=call["id"], name=call["name"], args=call["arguments"],
+                        ),
+                        thought_signature=thought_signature,
+                    )],
+                )
+            )
+            contents.append(
+                types.Content(
+                    role="user",
+                    parts=[types.Part(function_response=types.FunctionResponse(
+                        id=call["id"], name=call["name"],
+                        response=json.loads(exchange["result_content"]),
+                    ))],
+                )
+            )
+
+        gemini_tool = types.Tool(
+            function_declarations=[
+                types.FunctionDeclaration(
+                    name=tool["name"], description=tool["description"], parameters=tool["parameters"],
+                )
+                for tool in tools
+            ]
+        )
+
+        try:
+            response = await self._client.aio.models.generate_content(
+                model=self._model,
+                contents=contents,
+                config=types.GenerateContentConfig(tools=[gemini_tool]),
+            )
+        except Exception as exc:
+            logger.exception("Gemini generate_with_tools() call failed")
+            _raise_classified(exc, "Failed to get a response from Gemini")
+
+        candidate = response.candidates[0] if response.candidates else None
+        if candidate is None or candidate.content is None or not candidate.content.parts:
+            raise GeminiServiceError("Gemini returned an empty tool-calling response")
+
+        tool_calls: list[ToolCall] = []
+        text_parts: list[str] = []
+        for part in candidate.content.parts:
+            if part.function_call is not None:
+                provider_data = {}
+                if part.thought_signature:
+                    provider_data["thought_signature"] = base64.b64encode(part.thought_signature).decode()
+                tool_calls.append(
+                    {
+                        "id": part.function_call.id or part.function_call.name,
+                        "name": part.function_call.name,
+                        "arguments": dict(part.function_call.args or {}),
+                        "provider_data": provider_data,
+                    }
+                )
+            elif part.text:
+                text_parts.append(part.text)
+
+        return {"text": "".join(text_parts) or None, "tool_calls": tool_calls}

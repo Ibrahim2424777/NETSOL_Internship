@@ -26,6 +26,7 @@ from app.database.repositories.user_repository import UserRepository
 from app.database.session import get_db
 from app.models.chat import Chat
 from app.models.user import User
+from app.mcp.client import MCPClientService
 from app.redis.chat_cache import ChatCache
 from app.redis.client import get_redis
 from app.services.chat_execution_service import ChatExecutionService
@@ -130,6 +131,17 @@ def get_web_search_model_service() -> ModelService:
     return FallbackModelService(
         compound, gemini, primary_name="groq-compound", fallback_name="gemini"
     )
+
+
+@lru_cache
+def get_mcp_client() -> MCPClientService:
+    """The one place that knows the standalone MCP server's URL (Phase 17
+    doc section 22 - never hardcoded elsewhere). Only agent_node.py (via
+    ChatExecutionService/build_chat_graph) actually calls this client -
+    nothing else in the backend is allowed to know MCP exists, per the
+    doc's "MCP server is the boundary around weather/email" requirement."""
+    settings = get_settings()
+    return MCPClientService(settings.MCP_SERVER_URL, timeout_seconds=settings.MCP_REQUEST_TIMEOUT_SECONDS)
 
 
 def get_chat_execution_service(request: Request) -> ChatExecutionService:

@@ -104,6 +104,7 @@ async def _stream_message(
     # web_search/normal), so at most one of these is ever non-None.
     sources = await _retrieved_sources(execution, chat_id) or await _web_search_sources(execution, chat_id)
     route = await _route_taken(execution, chat_id)
+    tools_used = await _tools_used(execution, chat_id)
     assistant_message = MessageResponse(
         id=uuid.uuid4(),
         chat_id=chat_id,
@@ -135,7 +136,7 @@ async def _stream_message(
     # (Phase 14 doc section 18 frames the UI indicator as optional/subtle) -
     # it's attached only to this one SSE event, so a page refresh simply
     # loses it rather than needing a schema/migration for a nice-to-have.
-    yield _sse({"type": "done", "message": assistant_payload, "route": route})
+    yield _sse({"type": "done", "message": assistant_payload, "route": route, "tools_used": tools_used})
 
 
 async def _route_taken(execution: ChatExecutionService, chat_id: uuid.UUID) -> str | None:
@@ -193,6 +194,18 @@ async def _web_search_sources(
         return None
 
     return [MessageSource(source=c["title"], url=c["url"]) for c in citations]
+
+
+async def _tools_used(execution: ChatExecutionService, chat_id: uuid.UUID) -> list[str]:
+    """Which MCP tool(s), if any, agent_node called this turn - for the
+    frontend's subtle tool-use indicator (Phase 17 doc section 20). Same
+    best-effort pattern as _route_taken: never turns into a client-facing
+    error since the reply already succeeded by the time this runs."""
+    try:
+        return await execution.get_tool_calls_made(chat_id)
+    except Exception:
+        logger.exception("Failed to read back tool calls for chat %s", chat_id)
+        return []
 
 
 async def _retract_user_message(cache: ChatCache, chat_id: uuid.UUID, message_id: uuid.UUID) -> None:

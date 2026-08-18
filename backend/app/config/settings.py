@@ -138,6 +138,14 @@ class Settings(BaseSettings):
     # normal/rag. Gemini is web search's fallback (see app/api/deps.py).
     GROQ_COMPOUND_MODEL: str = "groq/compound-mini"
 
+    # --- MCP (Phase 17) ---
+    # The standalone MCP server (../mcp-server) - a separate process/project
+    # with its own lifecycle, not started by this app. Configurable rather
+    # than hardcoded (Phase 17 doc section 22) so a deployment can point at
+    # an MCP server running anywhere, not just localhost.
+    MCP_SERVER_URL: str = "http://127.0.0.1:8100/mcp"
+    MCP_REQUEST_TIMEOUT_SECONDS: float = 15.0
+
     # --- Google OAuth 2.0 ---
     # Required (no default): there is no safe placeholder for an OAuth client
     # secret, so the app fails fast at startup instead of failing confusingly

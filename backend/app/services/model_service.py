@@ -7,7 +7,7 @@ new ModelService implementation and changing the one place that constructs it
 """
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Callable
-from typing import Literal, TypedDict
+from typing import Literal, NotRequired, TypedDict
 
 
 class ModelTurn(TypedDict):
@@ -17,6 +17,66 @@ class ModelTurn(TypedDict):
 
     role: Literal["user", "model"]
     content: str
+
+
+class ToolSpec(TypedDict):
+    """One tool definition offered to the model, in plain JSON-Schema form -
+    provider-agnostic on purpose (Phase 17): both Gemini's FunctionDeclaration
+    and Groq's OpenAI-style `tools=[...]` accept a standard JSON Schema
+    `parameters` object directly (verified live against both installed SDKs -
+    neither needed any reshaping), so this is really just "whatever MCP's
+    tools/list already returns", passed straight through with no per-provider
+    translation layer to maintain."""
+
+    name: str
+    description: str
+    parameters: dict
+
+
+class ToolCall(TypedDict):
+    """One tool invocation the model is requesting."""
+
+    id: str
+    name: str
+    arguments: dict
+    # Opaque, provider-specific continuation data a provider may need back
+    # on the NEXT generate_with_tools() call to correctly continue this
+    # exact tool-calling turn - e.g. Gemini's `thought_signature` (a
+    # "thinking" model's internal reasoning trace; required on function-call
+    # replies for multi-step tool use per Gemini's own docs, discovered live
+    # when a 2-tool-offered, 2+ iteration loop failed with "Function call is
+    # missing a thought_signature" - a single-exchange test earlier hadn't
+    # exercised this path). Absent/ignored for providers with no equivalent
+    # concept (Groq never sets or reads this) - this is exactly the "isolate
+    # the difference inside the provider abstraction" the Phase 17 doc asks
+    # for (section 17), rather than leaking Gemini-specific shape into
+    # agent_node.py or the other provider's implementation.
+    provider_data: NotRequired[dict]
+
+
+class ToolExchange(TypedDict):
+    """One completed (tool call -> result) pair from earlier in the CURRENT
+    turn's tool-calling loop - see ModelService.generate_with_tools. The loop
+    itself (call model -> execute requested tool(s) -> call model again with
+    results) lives in app code (app/langgraph/nodes/agent_node.py), not in
+    any provider class, since executing an MCP tool call requires the MCP
+    client, which providers have no business knowing about. `result_content`
+    is a JSON string (or plain text) - already-serialized so every provider
+    implementation treats it identically regardless of what the tool
+    actually returned."""
+
+    tool_call: ToolCall
+    result_content: str
+
+
+class ModelToolResponse(TypedDict):
+    """Result of one generate_with_tools() call. Exactly one of the two
+    fields is meaningful: `tool_calls` non-empty means the model wants to
+    call tool(s) before it can answer (text is typically empty/None then);
+    `tool_calls` empty means `text` is the model's final answer."""
+
+    text: str | None
+    tool_calls: list[ToolCall]
 
 
 class SearchCitation(TypedDict):
@@ -90,4 +150,32 @@ class ModelService(ABC):
         wants a structured/constrained response (so the result is always
         one of `choices`, never free text to parse), which is a materially
         different request shape from open-ended generation."""
+        raise NotImplementedError
+
+    @abstractmethod
+    async def generate_with_tools(
+        self,
+        history: list[ModelTurn],
+        *,
+        tools: list[ToolSpec],
+        exchanges: list[ToolExchange] | None = None,
+    ) -> ModelToolResponse:
+        """One step of a tool-calling turn (Phase 17) - used by
+        app/langgraph/nodes/agent_node.py's loop, never called directly by a
+        route that doesn't need tools (RAG/web_search keep using plain
+        generate_stream()).
+
+        `history` is the prior conversation, exactly like generate()'s.
+        `tools` are the MCP-discovered tool definitions to offer the model
+        this call. `exchanges` are this TURN's tool_call/result pairs
+        completed so far (empty on the loop's first call) - each
+        implementation is responsible for translating history + exchanges
+        into its own native multi-turn tool-calling format (e.g. Gemini's
+        function_call/function_response Content parts, Groq's
+        assistant/tool role messages); callers never see that shape.
+
+        Deliberately non-streaming - the model's "should I call a tool"
+        decision isn't shown to the user anyway, only the eventual final
+        text is (see agent_node.py for how that's still delivered
+        incrementally to the client)."""
         raise NotImplementedError

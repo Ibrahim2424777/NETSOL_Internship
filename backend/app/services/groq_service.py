@@ -17,7 +17,16 @@ from collections.abc import AsyncIterator, Callable
 
 import groq
 
-from app.services.model_service import ModelService, ModelTurn, ProviderUnavailableError, SearchCitation
+from app.services.model_service import (
+    ModelService,
+    ModelToolResponse,
+    ModelTurn,
+    ProviderUnavailableError,
+    SearchCitation,
+    ToolCall,
+    ToolExchange,
+    ToolSpec,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +42,19 @@ class GroqServiceError(Exception):
 # lookup - RateLimitError is a 429, InternalServerError covers Groq's own
 # 5xx/service-unavailable responses, APITimeoutError is a request timeout.
 _RETRYABLE_EXCEPTIONS = (groq.RateLimitError, groq.InternalServerError, groq.APITimeoutError)
+
+# Local retry budget (this attempt + N-1 retries) for a bare in-band
+# groq.APIError - see _raise_classified. Confirmed live to be
+# query-dependent and non-deterministic: the identical request to
+# groq/compound-mini can fail with "Request Entity Too Large" and then
+# succeed on a fresh retry, with no client-side change - restricting
+# compound_custom.tools.enabled_tools to just web_search (see
+# _compound_kwargs) was tried and confirmed live NOT to eliminate it, so
+# more attempts (rather than a different request shape) is the only lever
+# that's actually shown to help empirically. 3 gives a meaningfully better
+# chance of getting through before falling back to Gemini, without an
+# unbounded retry loop for a genuinely persistent failure.
+_COMPOUND_RETRY_ATTEMPTS = 3
 
 
 def _raise_classified(exc: Exception, message: str) -> None:
@@ -64,6 +86,21 @@ def _to_messages(history: list[ModelTurn]) -> list[dict[str, str]]:
     ]
 
 
+def _compound_kwargs(model: str) -> dict:
+    # Restricts Groq's "compound" models (Phase 14.6) to their `web_search`
+    # tool only - excludes `visit_website` (fetches a full raw page, unlike
+    # web_search's bounded snippets), `code_interpreter`, and `wolfram_alpha`,
+    # none of which this app's web-search route needs. Confirmed live to be
+    # the actual cause of a real, reproducible `413 Request Entity Too Large`
+    # / bare groq.APIError on ordinary news queries (e.g. a live cricket
+    # match) - compound-mini choosing to visit_website on a large live-blog
+    # page, not the number of search results per se. A no-op (empty dict) for
+    # any non-compound model - `compound_custom` is a compound-only concept.
+    if "compound" not in model:
+        return {}
+    return {"compound_custom": {"tools": {"enabled_tools": ["web_search"]}}}
+
+
 def _citations_from_executed_tools(executed_tools) -> list[SearchCitation]:
     """Only Groq's "compound" models set executed_tools at all (plain chat
     models like gpt-oss-120b never do) - a search tool call's results carry
@@ -90,26 +127,29 @@ class GroqService(ModelService):
         *,
         on_search_result: Callable[[SearchCitation], None] | None = None,
     ) -> str:
-        # One local retry, ONLY for a bare in-band groq.APIError (see
-        # _raise_classified) - confirmed live to be query-specific and
-        # non-deterministic (the exact same request failed once, then
-        # succeeded on a plain retry), unlike RateLimitError/
-        # InternalServerError, which mean the provider itself is
-        # struggling and retrying locally would just waste time before an
+        # Local retries, ONLY for a bare in-band groq.APIError (see
+        # _raise_classified and _COMPOUND_RETRY_ATTEMPTS) - unlike
+        # RateLimitError/InternalServerError, which mean the provider itself
+        # is struggling and retrying locally would just waste time before an
         # inevitable fallback. response is always set by the time the loop
         # exits: _raise_classified always raises, so either this succeeds
-        # within 2 attempts or the function never reaches the line below.
+        # within the attempt budget or the function never reaches the line
+        # below.
         response = None
-        for attempt in range(2):
+        for attempt in range(_COMPOUND_RETRY_ATTEMPTS):
             try:
                 response = await self._client.chat.completions.create(
                     model=self._model,
                     messages=_to_messages(history),
+                    **_compound_kwargs(self._model),
                 )
                 break
             except Exception as exc:
-                if type(exc) is groq.APIError and attempt == 0:
-                    logger.warning("Groq in-band error on generate() - retrying once: %s", exc)
+                if type(exc) is groq.APIError and attempt < _COMPOUND_RETRY_ATTEMPTS - 1:
+                    logger.warning(
+                        "Groq in-band error on generate() - retrying (attempt %d/%d): %s",
+                        attempt + 1, _COMPOUND_RETRY_ATTEMPTS, exc,
+                    )
                     continue
                 logger.exception("Groq chat.completions.create call failed")
                 _raise_classified(exc, "Failed to get a response from Groq")
@@ -132,20 +172,22 @@ class GroqService(ModelService):
         *,
         on_search_result: Callable[[SearchCitation], None] | None = None,
     ) -> AsyncIterator[str]:
-        # One local retry (fresh request, from scratch) for a bare in-band
-        # groq.APIError (see _raise_classified) - gated on yielded_any so a
-        # retry never happens after real output already reached the
-        # caller, for the same reason FallbackModelService won't switch
-        # providers mid-stream: two partial answers can't be stitched
-        # together. If the error recurs after some output on attempt 2, or
+        # Local retries (fresh request, from scratch each time) for a bare
+        # in-band groq.APIError (see _raise_classified and
+        # _COMPOUND_RETRY_ATTEMPTS) - gated on yielded_any so a retry never
+        # happens after real output already reached the caller, for the
+        # same reason FallbackModelService won't switch providers
+        # mid-stream: two partial answers can't be stitched together. If
+        # the error recurs after some output, or on the final attempt, or
         # is a different (provider-health) exception, it's classified and
         # raised for FallbackModelService to handle instead.
-        for attempt in range(2):
+        for attempt in range(_COMPOUND_RETRY_ATTEMPTS):
             try:
                 stream = await self._client.chat.completions.create(
                     model=self._model,
                     messages=_to_messages(history),
                     stream=True,
+                    **_compound_kwargs(self._model),
                 )
             except Exception as exc:
                 logger.exception("Groq streaming call failed to start")
@@ -163,9 +205,14 @@ class GroqService(ModelService):
                             on_search_result(citation)
                 return
             except Exception as exc:
-                if type(exc) is groq.APIError and not yielded_any and attempt == 0:
+                if (
+                    type(exc) is groq.APIError
+                    and not yielded_any
+                    and attempt < _COMPOUND_RETRY_ATTEMPTS - 1
+                ):
                     logger.warning(
-                        "Groq in-stream error before any output - retrying once: %s", exc
+                        "Groq in-stream error before any output - retrying (attempt %d/%d): %s",
+                        attempt + 1, _COMPOUND_RETRY_ATTEMPTS, exc,
                     )
                     continue
                 # Classification only - see gemini_service.py's identical
@@ -218,3 +265,60 @@ class GroqService(ModelService):
             raise GroqServiceError(f"Groq returned an unrecognized classification: {choice!r}")
 
         return choice
+
+    async def generate_with_tools(
+        self,
+        history: list[ModelTurn],
+        *,
+        tools: list[ToolSpec],
+        exchanges: list[ToolExchange] | None = None,
+    ) -> ModelToolResponse:
+        messages = _to_messages(history)
+        for exchange in exchanges or []:
+            call = exchange["tool_call"]
+            # OpenAI-compatible shape: the model's tool_calls turn, then one
+            # "tool" role message per result, matched by tool_call_id.
+            messages.append(
+                {
+                    "role": "assistant",
+                    "content": "",
+                    "tool_calls": [
+                        {
+                            "id": call["id"],
+                            "type": "function",
+                            "function": {"name": call["name"], "arguments": json.dumps(call["arguments"])},
+                        }
+                    ],
+                }
+            )
+            messages.append(
+                {"role": "tool", "tool_call_id": call["id"], "content": exchange["result_content"]}
+            )
+
+        groq_tools = [
+            {
+                "type": "function",
+                "function": {
+                    "name": tool["name"],
+                    "description": tool["description"],
+                    "parameters": tool["parameters"],
+                },
+            }
+            for tool in tools
+        ]
+
+        try:
+            response = await self._client.chat.completions.create(
+                model=self._model, messages=messages, tools=groq_tools,
+            )
+        except Exception as exc:
+            logger.exception("Groq generate_with_tools() call failed")
+            _raise_classified(exc, "Failed to get a response from Groq")
+
+        message = response.choices[0].message
+        tool_calls: list[ToolCall] = [
+            {"id": tc.id, "name": tc.function.name, "arguments": json.loads(tc.function.arguments)}
+            for tc in (message.tool_calls or [])
+        ]
+
+        return {"text": message.content or None, "tool_calls": tool_calls}

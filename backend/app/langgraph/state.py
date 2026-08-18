@@ -40,9 +40,20 @@ the web_search branch does NOT converge on the shared model node, since
 Groq's compound-mini generates the final grounded answer itself in one step
 rather than retrieving-then-generating.
 
-Future phases extend this further - e.g. a `tool_calls` field for tool
-calling - rather than replacing it, so existing nodes keep working unchanged
-when new nodes are added.
+`tool_calls_made` (Phase 17) is observability-only, the same role `route`
+plays for the router - agent_node.py records which MCP tool(s) it actually
+invoked this turn (e.g. ["get_current_weather"]), purely so messages.py can
+surface a subtle "used: weather" indicator to the frontend (see
+app/langgraph/nodes/agent_node.py) without the frontend needing to parse
+message content or know MCP exists. Reset every turn like retrieved_context/
+web_search_sources - it's per-turn, not cumulative.
+
+Deliberately NOT storing tool call arguments or raw results here: the
+agent-loop's tool_call/result exchanges live only in agent_node.py's local
+variables for the duration of one turn, never written to ChatState at all,
+so they're never checkpointed - see that module's docstring for why (email
+content in particular must not silently become persistent conversation
+memory, per the Phase 17 doc's privacy requirements).
 """
 from typing import Annotated, Literal, TypedDict
 
@@ -67,4 +78,5 @@ class ChatState(TypedDict):
     retrieved_context: list[RetrievedChunk]
     web_search_sources: list[WebSearchSource]
     web_search_requested: bool
+    tool_calls_made: list[str]
     route: Route | None

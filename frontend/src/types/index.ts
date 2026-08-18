@@ -45,6 +45,10 @@ export interface Message {
   // Never comes from the REST API, only attached in-memory when a 'done'
   // SSE event arrives, so it's absent for messages loaded via GET.
   route?: MessageRoute | null;
+  // Which MCP tool(s), if any, the agent called to produce this reply
+  // (Phase 17) - e.g. ["get_current_weather"]. Same transient, SSE-only
+  // lifetime as `route` above (see messages.py's _tools_used).
+  toolsUsed?: string[] | null;
 }
 
 export interface TokenResponse {
@@ -59,7 +63,7 @@ export interface TokenResponse {
 export type ChatStreamEvent =
   | { type: 'user_message'; message: Message }
   | { type: 'chunk'; content: string }
-  | { type: 'done'; message: Message; route?: MessageRoute | null }
+  | { type: 'done'; message: Message; route?: MessageRoute | null; tools_used?: string[] | null }
   // removed_message_id is set when the user's message was un-sent because
   // the assistant failed to respond - the id to remove from the UI so a
   // retry doesn't look like the same question was sent twice.

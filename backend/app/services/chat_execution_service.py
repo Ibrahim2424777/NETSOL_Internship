@@ -29,6 +29,7 @@ from langgraph.graph.state import CompiledStateGraph
 
 from app.langgraph.graphs.chat_graph import build_chat_graph
 from app.langgraph.state import ChatState, Route, WebSearchSource
+from app.mcp.client import MCPClientService
 from app.rag.retriever import Retriever
 from app.services.model_service import ModelService
 from app.services.vector_store_service import RetrievedChunk
@@ -40,6 +41,7 @@ class ChatExecutionService:
         model_service: ModelService,
         web_search_model_service: ModelService,
         retriever: Retriever,
+        mcp_client: MCPClientService,
         *,
         checkpointer: BaseCheckpointSaver,
         max_history_messages: int,
@@ -50,6 +52,7 @@ class ChatExecutionService:
             model_service,
             web_search_model_service,
             retriever,
+            mcp_client,
             checkpointer=checkpointer,
             max_history_messages=max_history_messages,
             router_context_messages=router_context_messages,
@@ -73,6 +76,7 @@ class ChatExecutionService:
             "retrieved_context": [],
             "web_search_sources": [],
             "web_search_requested": web_search,
+            "tool_calls_made": [],
             "route": None,
         }
 
@@ -140,3 +144,11 @@ class ChatExecutionService:
         fell back to Gemini (no search, no citations) or simply didn't need
         to search to answer."""
         return await self._state_value(chat_id, "web_search_sources") or []
+
+    async def get_tool_calls_made(self, chat_id: uuid.UUID) -> list[str]:
+        """Which MCP tool(s) (if any) agent_node actually invoked this turn -
+        empty on any turn that didn't route to "normal", or that did but the
+        model answered without needing a tool. Observability only, for the
+        frontend's subtle tool-use indicator (Phase 17 doc section 20) - see
+        messages.py."""
+        return await self._state_value(chat_id, "tool_calls_made") or []

@@ -444,6 +444,26 @@ button:focus-visible,
   border-bottom: 1px solid var(--app-border);
 }
 
+/* Tool-use indicator (Phase 17) - a small pill next to the "Assistant"
+   label, only shown when agent_node actually called an MCP tool this turn.
+   Deliberately understated (gold-on-transparent, no heavy background) so it
+   reads as metadata, not another headline element competing with the reply
+   itself. */
+.tool-use-chip {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--app-accent);
+  background: color-mix(in srgb, var(--app-accent) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--app-accent) 30%, transparent);
+  border-radius: 999px;
+  padding: 0.1rem 0.55rem;
+  line-height: 1.4;
+}
+.tool-use-chip svg {
+  width: 0.85em;
+  height: 0.85em;
+}
+
 /* Source attribution (RAG, Phase 12) */
 .sources-panel {
   border-top: 1px solid var(--app-border);

@@ -17,7 +17,7 @@ from fastapi.responses import JSONResponse
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from psycopg_pool import AsyncConnectionPool
 
-from app.api.deps import get_model_service, get_web_search_model_service
+from app.api.deps import get_mcp_client, get_model_service, get_web_search_model_service
 from app.api.v1.router import api_router
 from app.config.logging import configure_logging
 from app.config.settings import get_settings
@@ -73,6 +73,7 @@ async def lifespan(app: FastAPI):
         get_model_service(),
         get_web_search_model_service(),
         retriever,
+        get_mcp_client(),
         checkpointer=checkpointer,
         max_history_messages=settings.MAX_HISTORY_MESSAGES,
         router_context_messages=settings.ROUTER_CONTEXT_MESSAGES,

@@ -117,3 +117,34 @@ export function ArrowRightIcon(props: IconProps) {
     </svg>
   );
 }
+
+// Tool-use indicator (Phase 17) - weather tools (get_current_weather,
+// get_weather_forecast) on an agent-routed reply.
+export function CloudIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M17.5 19a4.5 4.5 0 0 0 0-9 6 6 0 0 0-11.4 1.5A4 4 0 0 0 6.5 19h11z" />
+    </svg>
+  );
+}
+
+// Tool-use indicator (Phase 17) - email tools (send_email,
+// list_recent_emails, read_email) on an agent-routed reply.
+export function MailIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="2" y="4" width="20" height="16" rx="2" />
+      <path d="m2 6 10 7 10-7" />
+    </svg>
+  );
+}
+
+// Tool-use indicator (Phase 17) - generic fallback for any other/future MCP
+// tool that isn't weather or email specifically.
+export function SparkleIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8" />
+    </svg>
+  );
+}

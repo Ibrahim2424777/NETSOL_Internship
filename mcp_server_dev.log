@@ -1,0 +1,389 @@
+2026-08-17 12:09:42,150 | INFO     | __main__ | Starting Personal AI Tools - Streamable HTTP on http://127.0.0.1:8100/mcp
+INFO:     Started server process [12172]
+INFO:     Waiting for application startup.
+2026-08-17 12:09:42,215 | INFO     | mcp.server.streamable_http_manager | StreamableHTTP session manager started
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8100 (Press CTRL+C to quit)
+2026-08-17 12:11:04,131 | INFO     | mcp.server.streamable_http_manager | Created new transport with session ID: 934b7d52e05046429605513499a9b33c
+INFO:     127.0.0.1:53362 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53363 - "POST /mcp HTTP/1.1" 202 Accepted
+INFO:     127.0.0.1:53364 - "GET /mcp HTTP/1.1" 200 OK
+2026-08-17 12:11:04,153 | INFO     | mcp.server.streamable_http | Terminating session: 934b7d52e05046429605513499a9b33c
+INFO:     127.0.0.1:53365 - "DELETE /mcp HTTP/1.1" 200 OK
+2026-08-17 12:11:04,157 | ERROR    | asyncio | Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "C:\Users\hp\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\asyncio\events.py", line 88, in _run
+    self._context.run(self._callback, *self._args)
+  File "C:\Users\hp\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\asyncio\proactor_events.py", line 165, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionResetError: [WinError 10054] An existing connection was forcibly closed by the remote host
+2026-08-17 12:11:37,439 | INFO     | mcp.server.streamable_http_manager | Created new transport with session ID: bebb299481c546df9a3375a9e091b303
+INFO:     127.0.0.1:53368 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53369 - "POST /mcp HTTP/1.1" 202 Accepted
+INFO:     127.0.0.1:53370 - "GET /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53371 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 12:11:37,456 | ERROR    | asyncio | Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "C:\Users\hp\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\asyncio\events.py", line 88, in _run
+    self._context.run(self._callback, *self._args)
+  File "C:\Users\hp\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\asyncio\proactor_events.py", line 165, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionResetError: [WinError 10054] An existing connection was forcibly closed by the remote host
+INFO:     127.0.0.1:53372 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 12:11:39,213 | INFO     | httpx | HTTP Request: GET https://geocoding-api.open-meteo.com/v1/search?name=Multan%2C+Pakistan&count=1&language=en&format=json "HTTP/1.1 200 OK"
+2026-08-17 12:11:40,226 | INFO     | httpx | HTTP Request: GET https://api.open-meteo.com/v1/forecast?latitude=30.19679&longitude=71.47824&current=temperature_2m%2Crelative_humidity_2m%2Capparent_temperature%2Cis_day%2Cprecipitation%2Cweather_code%2Cwind_speed_10m%2Cwind_direction_10m&timezone=auto "HTTP/1.1 200 OK"
+2026-08-17 12:11:40,275 | ERROR    | asyncio | Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "C:\Users\hp\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\asyncio\events.py", line 88, in _run
+    self._context.run(self._callback, *self._args)
+  File "C:\Users\hp\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\asyncio\proactor_events.py", line 165, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionResetError: [WinError 10054] An existing connection was forcibly closed by the remote host
+2026-08-17 12:11:42,405 | INFO     | mcp.server.streamable_http | Terminating session: bebb299481c546df9a3375a9e091b303
+INFO:     127.0.0.1:53375 - "DELETE /mcp HTTP/1.1" 200 OK
+2026-08-17 12:12:13,110 | INFO     | mcp.server.streamable_http_manager | Created new transport with session ID: 22bf89d3f33a4247be2b2a64d7fc102c
+INFO:     127.0.0.1:53378 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53379 - "POST /mcp HTTP/1.1" 202 Accepted
+INFO:     127.0.0.1:53380 - "GET /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53381 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 12:12:13,984 | INFO     | httpx | HTTP Request: GET https://geocoding-api.open-meteo.com/v1/search?name=Multan%2C+Pakistan&count=1&language=en&format=json "HTTP/1.1 200 OK"
+2026-08-17 12:12:15,424 | INFO     | httpx | HTTP Request: GET https://api.open-meteo.com/v1/forecast?latitude=30.19679&longitude=71.47824&current=temperature_2m%2Crelative_humidity_2m%2Capparent_temperature%2Cis_day%2Cprecipitation%2Cweather_code%2Cwind_speed_10m%2Cwind_direction_10m&timezone=auto "HTTP/1.1 200 OK"
+2026-08-17 12:12:15,466 | ERROR    | asyncio | Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "C:\Users\hp\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\asyncio\events.py", line 88, in _run
+    self._context.run(self._callback, *self._args)
+  File "C:\Users\hp\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\asyncio\proactor_events.py", line 165, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionResetError: [WinError 10054] An existing connection was forcibly closed by the remote host
+INFO:     127.0.0.1:53384 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 12:12:15,831 | INFO     | mcp.server.streamable_http | Terminating session: 22bf89d3f33a4247be2b2a64d7fc102c
+INFO:     127.0.0.1:53385 - "DELETE /mcp HTTP/1.1" 200 OK
+2026-08-17 12:12:45,075 | INFO     | mcp.server.streamable_http_manager | Created new transport with session ID: 2bd5cac52ab0470c8c3797695b901279
+INFO:     127.0.0.1:53389 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53390 - "POST /mcp HTTP/1.1" 202 Accepted
+INFO:     127.0.0.1:53391 - "GET /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53392 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53393 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 12:12:45,107 | INFO     | mcp.server.streamable_http | Terminating session: 2bd5cac52ab0470c8c3797695b901279
+INFO:     127.0.0.1:53394 - "DELETE /mcp HTTP/1.1" 200 OK
+2026-08-17 12:12:45,109 | ERROR    | asyncio | Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "C:\Users\hp\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\asyncio\events.py", line 88, in _run
+    self._context.run(self._callback, *self._args)
+  File "C:\Users\hp\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\asyncio\proactor_events.py", line 165, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionResetError: [WinError 10054] An existing connection was forcibly closed by the remote host
+2026-08-17 12:23:43,302 | INFO     | mcp.server.streamable_http_manager | Created new transport with session ID: 09e7fe36dca34439a6021d685e3ec351
+INFO:     127.0.0.1:53433 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53434 - "POST /mcp HTTP/1.1" 202 Accepted
+INFO:     127.0.0.1:53435 - "GET /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53436 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 12:23:43,321 | ERROR    | asyncio | Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "C:\Users\hp\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\asyncio\events.py", line 88, in _run
+    self._context.run(self._callback, *self._args)
+  File "C:\Users\hp\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\asyncio\proactor_events.py", line 165, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionResetError: [WinError 10054] An existing connection was forcibly closed by the remote host
+2026-08-17 12:23:43,325 | INFO     | mcp.server.streamable_http | Terminating session: 09e7fe36dca34439a6021d685e3ec351
+INFO:     127.0.0.1:53437 - "DELETE /mcp HTTP/1.1" 200 OK
+2026-08-17 12:23:43,328 | ERROR    | asyncio | Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "C:\Users\hp\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\asyncio\events.py", line 88, in _run
+    self._context.run(self._callback, *self._args)
+  File "C:\Users\hp\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\asyncio\proactor_events.py", line 165, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionResetError: [WinError 10054] An existing connection was forcibly closed by the remote host
+2026-08-17 12:23:43,334 | INFO     | mcp.server.streamable_http_manager | Created new transport with session ID: 5bb6f0cad204402486067bc93ff69110
+INFO:     127.0.0.1:53438 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53439 - "POST /mcp HTTP/1.1" 202 Accepted
+INFO:     127.0.0.1:53440 - "GET /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53441 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 12:23:44,379 | INFO     | httpx | HTTP Request: GET https://geocoding-api.open-meteo.com/v1/search?name=Multan%2C+Pakistan&count=1&language=en&format=json "HTTP/1.1 200 OK"
+2026-08-17 12:23:45,713 | INFO     | httpx | HTTP Request: GET https://api.open-meteo.com/v1/forecast?latitude=30.19679&longitude=71.47824&current=temperature_2m%2Crelative_humidity_2m%2Capparent_temperature%2Cis_day%2Cprecipitation%2Cweather_code%2Cwind_speed_10m%2Cwind_direction_10m&timezone=auto "HTTP/1.1 200 OK"
+2026-08-17 12:23:45,743 | ERROR    | asyncio | Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "C:\Users\hp\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\asyncio\events.py", line 88, in _run
+    self._context.run(self._callback, *self._args)
+  File "C:\Users\hp\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\asyncio\proactor_events.py", line 165, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionResetError: [WinError 10054] An existing connection was forcibly closed by the remote host
+INFO:     127.0.0.1:53444 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 12:23:46,174 | INFO     | mcp.server.streamable_http | Terminating session: 5bb6f0cad204402486067bc93ff69110
+INFO:     127.0.0.1:53445 - "DELETE /mcp HTTP/1.1" 200 OK
+2026-08-17 12:23:46,181 | INFO     | mcp.server.streamable_http_manager | Created new transport with session ID: b5ac21dd3ff845f2acdb3aaa47915ad1
+INFO:     127.0.0.1:53446 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53447 - "POST /mcp HTTP/1.1" 202 Accepted
+INFO:     127.0.0.1:53448 - "GET /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53449 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 12:23:47,064 | INFO     | httpx | HTTP Request: GET https://geocoding-api.open-meteo.com/v1/search?name=Zzzxxqqnonexistent12345&count=1&language=en&format=json "HTTP/1.1 200 OK"
+2026-08-17 12:23:47,096 | ERROR    | asyncio | Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "C:\Users\hp\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\asyncio\events.py", line 88, in _run
+    self._context.run(self._callback, *self._args)
+  File "C:\Users\hp\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\asyncio\proactor_events.py", line 165, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionResetError: [WinError 10054] An existing connection was forcibly closed by the remote host
+2026-08-17 12:23:47,112 | INFO     | mcp.server.streamable_http | Terminating session: b5ac21dd3ff845f2acdb3aaa47915ad1
+INFO:     127.0.0.1:53451 - "DELETE /mcp HTTP/1.1" 200 OK
+2026-08-17 12:23:47,112 | ERROR    | asyncio | Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "C:\Users\hp\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\asyncio\events.py", line 88, in _run
+    self._context.run(self._callback, *self._args)
+  File "C:\Users\hp\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\asyncio\proactor_events.py", line 165, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionResetError: [WinError 10054] An existing connection was forcibly closed by the remote host
+2026-08-17 12:51:02,153 | INFO     | mcp.server.streamable_http_manager | Created new transport with session ID: cdc85126c11e41e682659d429f2a0e66
+INFO:     127.0.0.1:53677 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53678 - "POST /mcp HTTP/1.1" 202 Accepted
+INFO:     127.0.0.1:53679 - "GET /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53680 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 12:51:02,197 | INFO     | mcp.server.streamable_http | Terminating session: cdc85126c11e41e682659d429f2a0e66
+INFO:     127.0.0.1:53681 - "DELETE /mcp HTTP/1.1" 200 OK
+2026-08-17 12:51:02,201 | ERROR    | asyncio | Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "C:\Users\hp\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\asyncio\events.py", line 88, in _run
+    self._context.run(self._callback, *self._args)
+  File "C:\Users\hp\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\asyncio\proactor_events.py", line 165, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionResetError: [WinError 10054] An existing connection was forcibly closed by the remote host
+2026-08-17 12:51:10,218 | INFO     | mcp.server.streamable_http_manager | Created new transport with session ID: 6995edce3b8d4b91929554e6b56f2e4d
+INFO:     127.0.0.1:53682 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 12:51:10,235 | ERROR    | asyncio | Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "C:\Users\hp\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\asyncio\events.py", line 88, in _run
+    self._context.run(self._callback, *self._args)
+  File "C:\Users\hp\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\asyncio\proactor_events.py", line 165, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionResetError: [WinError 10054] An existing connection was forcibly closed by the remote host
+INFO:     127.0.0.1:53683 - "POST /mcp HTTP/1.1" 202 Accepted
+INFO:     127.0.0.1:53684 - "GET /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53685 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 12:51:11,203 | INFO     | httpx | HTTP Request: GET https://geocoding-api.open-meteo.com/v1/search?name=Multan&count=1&language=en&format=json "HTTP/1.1 200 OK"
+2026-08-17 12:51:12,318 | INFO     | httpx | HTTP Request: GET https://api.open-meteo.com/v1/forecast?latitude=30.19679&longitude=71.47824&current=temperature_2m%2Crelative_humidity_2m%2Capparent_temperature%2Cis_day%2Cprecipitation%2Cweather_code%2Cwind_speed_10m%2Cwind_direction_10m&timezone=auto "HTTP/1.1 200 OK"
+2026-08-17 12:51:12,362 | ERROR    | asyncio | Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "C:\Users\hp\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\asyncio\events.py", line 88, in _run
+    self._context.run(self._callback, *self._args)
+  File "C:\Users\hp\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\asyncio\proactor_events.py", line 165, in _call_connection_lost
+    self._sock.shutdown(socket.SHUT_RDWR)
+ConnectionResetError: [WinError 10054] An existing connection was forcibly closed by the remote host
+INFO:     127.0.0.1:53688 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 12:51:12,608 | INFO     | mcp.server.streamable_http | Terminating session: 6995edce3b8d4b91929554e6b56f2e4d
+INFO:     127.0.0.1:53689 - "DELETE /mcp HTTP/1.1" 200 OK
+2026-08-17 13:01:04,542 | INFO     | mcp.server.streamable_http_manager | Created new transport with session ID: 9a362d1031214d6fa8c513ef04803a71
+INFO:     127.0.0.1:53710 - "GET /mcp HTTP/1.1" 400 Bad Request
+2026-08-17 13:02:00,215 | INFO     | mcp.server.streamable_http_manager | Created new transport with session ID: 94d037cff21c450a98f4f0ed1873b5d2
+INFO:     127.0.0.1:53717 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53718 - "POST /mcp HTTP/1.1" 202 Accepted
+INFO:     127.0.0.1:53719 - "GET /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53720 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 13:02:00,249 | INFO     | mcp.server.streamable_http | Terminating session: 94d037cff21c450a98f4f0ed1873b5d2
+INFO:     127.0.0.1:53721 - "DELETE /mcp HTTP/1.1" 200 OK
+2026-08-17 13:02:02,796 | INFO     | mcp.server.streamable_http_manager | Created new transport with session ID: 965664cfd5304f0c940e4a2a6032b953
+INFO:     127.0.0.1:53723 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53724 - "POST /mcp HTTP/1.1" 202 Accepted
+INFO:     127.0.0.1:53725 - "GET /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53726 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 13:02:03,926 | INFO     | httpx | HTTP Request: GET https://geocoding-api.open-meteo.com/v1/search?name=Multan&count=1&language=en&format=json "HTTP/1.1 200 OK"
+2026-08-17 13:02:05,226 | INFO     | httpx | HTTP Request: GET https://api.open-meteo.com/v1/forecast?latitude=30.19679&longitude=71.47824&current=temperature_2m%2Crelative_humidity_2m%2Capparent_temperature%2Cis_day%2Cprecipitation%2Cweather_code%2Cwind_speed_10m%2Cwind_direction_10m&timezone=auto "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:53729 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 13:02:05,721 | INFO     | mcp.server.streamable_http | Terminating session: 965664cfd5304f0c940e4a2a6032b953
+INFO:     127.0.0.1:53730 - "DELETE /mcp HTTP/1.1" 200 OK
+2026-08-17 13:02:46,584 | INFO     | mcp.server.streamable_http_manager | Created new transport with session ID: bb0c3aeae38f4c269adca25c128c73e1
+INFO:     127.0.0.1:53736 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53737 - "POST /mcp HTTP/1.1" 202 Accepted
+INFO:     127.0.0.1:53738 - "GET /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53739 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 13:02:46,634 | INFO     | mcp.server.streamable_http | Terminating session: bb0c3aeae38f4c269adca25c128c73e1
+INFO:     127.0.0.1:53740 - "DELETE /mcp HTTP/1.1" 200 OK
+2026-08-17 13:03:21,270 | INFO     | mcp.server.streamable_http_manager | Created new transport with session ID: 47af8812415a46beac9f53eb60118a57
+INFO:     127.0.0.1:53747 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53748 - "POST /mcp HTTP/1.1" 202 Accepted
+INFO:     127.0.0.1:53749 - "GET /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53750 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 13:03:21,307 | INFO     | mcp.server.streamable_http | Terminating session: 47af8812415a46beac9f53eb60118a57
+INFO:     127.0.0.1:53751 - "DELETE /mcp HTTP/1.1" 200 OK
+2026-08-17 13:03:27,199 | INFO     | mcp.server.streamable_http_manager | Created new transport with session ID: 55254b9eb3d54e1a8dccf284fd234c15
+INFO:     127.0.0.1:53753 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53754 - "POST /mcp HTTP/1.1" 202 Accepted
+INFO:     127.0.0.1:53755 - "GET /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53756 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 13:03:28,388 | INFO     | httpx | HTTP Request: GET https://geocoding-api.open-meteo.com/v1/search?name=Multan&count=1&language=en&format=json "HTTP/1.1 200 OK"
+2026-08-17 13:03:29,451 | INFO     | httpx | HTTP Request: GET https://api.open-meteo.com/v1/forecast?latitude=30.19679&longitude=71.47824&current=temperature_2m%2Crelative_humidity_2m%2Capparent_temperature%2Cis_day%2Cprecipitation%2Cweather_code%2Cwind_speed_10m%2Cwind_direction_10m&timezone=auto "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:53759 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 13:03:29,764 | INFO     | mcp.server.streamable_http | Terminating session: 55254b9eb3d54e1a8dccf284fd234c15
+INFO:     127.0.0.1:53760 - "DELETE /mcp HTTP/1.1" 200 OK
+2026-08-17 13:04:13,082 | INFO     | mcp.server.streamable_http_manager | Created new transport with session ID: dafcfc0fe7a64f9891c0b22d148c56ea
+INFO:     127.0.0.1:53775 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53776 - "POST /mcp HTTP/1.1" 202 Accepted
+INFO:     127.0.0.1:53777 - "GET /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53778 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 13:04:13,121 | INFO     | mcp.server.streamable_http | Terminating session: dafcfc0fe7a64f9891c0b22d148c56ea
+INFO:     127.0.0.1:53779 - "DELETE /mcp HTTP/1.1" 200 OK
+2026-08-17 13:04:21,577 | INFO     | mcp.server.streamable_http_manager | Created new transport with session ID: 1195df0e7b1c4274a98929c863116a83
+INFO:     127.0.0.1:53784 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53785 - "POST /mcp HTTP/1.1" 202 Accepted
+INFO:     127.0.0.1:53786 - "GET /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53787 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 13:04:22,693 | INFO     | httpx | HTTP Request: GET https://geocoding-api.open-meteo.com/v1/search?name=Multan&count=1&language=en&format=json "HTTP/1.1 200 OK"
+2026-08-17 13:04:23,804 | INFO     | httpx | HTTP Request: GET https://api.open-meteo.com/v1/forecast?latitude=30.19679&longitude=71.47824&current=temperature_2m%2Crelative_humidity_2m%2Capparent_temperature%2Cis_day%2Cprecipitation%2Cweather_code%2Cwind_speed_10m%2Cwind_direction_10m&timezone=auto "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:53790 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 13:04:24,090 | INFO     | mcp.server.streamable_http | Terminating session: 1195df0e7b1c4274a98929c863116a83
+INFO:     127.0.0.1:53791 - "DELETE /mcp HTTP/1.1" 200 OK
+2026-08-17 13:05:18,083 | INFO     | mcp.server.streamable_http_manager | Created new transport with session ID: ab7ab722f028403cbbc1ebc9aa607c9f
+INFO:     127.0.0.1:53799 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53800 - "POST /mcp HTTP/1.1" 202 Accepted
+INFO:     127.0.0.1:53801 - "GET /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53802 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 13:05:18,221 | INFO     | mcp.server.streamable_http | Terminating session: ab7ab722f028403cbbc1ebc9aa607c9f
+INFO:     127.0.0.1:53803 - "DELETE /mcp HTTP/1.1" 200 OK
+2026-08-17 13:05:30,176 | INFO     | mcp.server.streamable_http_manager | Created new transport with session ID: 191e13d9c80746ceaa4906b4ddbbc6a6
+INFO:     127.0.0.1:53806 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53807 - "POST /mcp HTTP/1.1" 202 Accepted
+INFO:     127.0.0.1:53808 - "GET /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53809 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 13:05:31,258 | INFO     | httpx | HTTP Request: GET https://geocoding-api.open-meteo.com/v1/search?name=Multan&count=1&language=en&format=json "HTTP/1.1 200 OK"
+2026-08-17 13:05:32,443 | INFO     | httpx | HTTP Request: GET https://api.open-meteo.com/v1/forecast?latitude=30.19679&longitude=71.47824&current=temperature_2m%2Crelative_humidity_2m%2Capparent_temperature%2Cis_day%2Cprecipitation%2Cweather_code%2Cwind_speed_10m%2Cwind_direction_10m&timezone=auto "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:53812 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 13:05:32,885 | INFO     | mcp.server.streamable_http | Terminating session: 191e13d9c80746ceaa4906b4ddbbc6a6
+INFO:     127.0.0.1:53813 - "DELETE /mcp HTTP/1.1" 200 OK
+2026-08-17 13:06:14,341 | INFO     | mcp.server.streamable_http_manager | Created new transport with session ID: ad329f39c01740fd95488bbcdb4bdc25
+INFO:     127.0.0.1:53822 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53823 - "POST /mcp HTTP/1.1" 202 Accepted
+INFO:     127.0.0.1:53824 - "GET /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53825 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 13:06:14,421 | INFO     | mcp.server.streamable_http | Terminating session: ad329f39c01740fd95488bbcdb4bdc25
+INFO:     127.0.0.1:53826 - "DELETE /mcp HTTP/1.1" 200 OK
+2026-08-17 13:06:22,661 | INFO     | mcp.server.streamable_http_manager | Created new transport with session ID: 5d64d1d19bc84b3f94438be17b590483
+INFO:     127.0.0.1:53828 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53829 - "POST /mcp HTTP/1.1" 202 Accepted
+INFO:     127.0.0.1:53830 - "GET /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53831 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 13:06:23,799 | INFO     | httpx | HTTP Request: GET https://geocoding-api.open-meteo.com/v1/search?name=Multan&count=1&language=en&format=json "HTTP/1.1 200 OK"
+2026-08-17 13:06:24,849 | INFO     | httpx | HTTP Request: GET https://api.open-meteo.com/v1/forecast?latitude=30.19679&longitude=71.47824&current=temperature_2m%2Crelative_humidity_2m%2Capparent_temperature%2Cis_day%2Cprecipitation%2Cweather_code%2Cwind_speed_10m%2Cwind_direction_10m&timezone=auto "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:53834 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 13:06:25,413 | INFO     | mcp.server.streamable_http | Terminating session: 5d64d1d19bc84b3f94438be17b590483
+INFO:     127.0.0.1:53835 - "DELETE /mcp HTTP/1.1" 200 OK
+2026-08-17 13:07:04,386 | INFO     | mcp.server.streamable_http_manager | Created new transport with session ID: 5d98196b6949468fa74aac01f4bca9e6
+INFO:     127.0.0.1:53846 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53847 - "POST /mcp HTTP/1.1" 202 Accepted
+INFO:     127.0.0.1:53848 - "GET /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53849 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 13:07:04,407 | INFO     | mcp.server.streamable_http | Terminating session: 5d98196b6949468fa74aac01f4bca9e6
+INFO:     127.0.0.1:53850 - "DELETE /mcp HTTP/1.1" 200 OK
+2026-08-17 13:07:05,732 | INFO     | mcp.server.streamable_http_manager | Created new transport with session ID: 447115390f2b4e9a9827add6e69279e2
+INFO:     127.0.0.1:53851 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53852 - "POST /mcp HTTP/1.1" 202 Accepted
+INFO:     127.0.0.1:53853 - "GET /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53854 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 13:07:07,405 | INFO     | httpx | HTTP Request: GET https://geocoding-api.open-meteo.com/v1/search?name=Multan&count=1&language=en&format=json "HTTP/1.1 200 OK"
+2026-08-17 13:07:08,437 | INFO     | httpx | HTTP Request: GET https://api.open-meteo.com/v1/forecast?latitude=30.19679&longitude=71.47824&current=temperature_2m%2Crelative_humidity_2m%2Capparent_temperature%2Cis_day%2Cprecipitation%2Cweather_code%2Cwind_speed_10m%2Cwind_direction_10m&timezone=auto "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:53857 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 13:07:08,887 | INFO     | mcp.server.streamable_http | Terminating session: 447115390f2b4e9a9827add6e69279e2
+INFO:     127.0.0.1:53858 - "DELETE /mcp HTTP/1.1" 200 OK
+2026-08-17 13:07:33,100 | INFO     | mcp.server.streamable_http_manager | Created new transport with session ID: add5f354046c4f91bd2405d1f2b3d88f
+INFO:     127.0.0.1:53866 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53867 - "POST /mcp HTTP/1.1" 202 Accepted
+INFO:     127.0.0.1:53868 - "GET /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53869 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 13:07:33,166 | INFO     | mcp.server.streamable_http | Terminating session: add5f354046c4f91bd2405d1f2b3d88f
+INFO:     127.0.0.1:53870 - "DELETE /mcp HTTP/1.1" 200 OK
+2026-08-17 13:07:34,159 | INFO     | mcp.server.streamable_http_manager | Created new transport with session ID: 0dc0e8544aca49d5ba5cf400beee1535
+INFO:     127.0.0.1:53871 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53872 - "POST /mcp HTTP/1.1" 202 Accepted
+INFO:     127.0.0.1:53873 - "GET /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53874 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 13:07:35,368 | INFO     | httpx | HTTP Request: GET https://geocoding-api.open-meteo.com/v1/search?name=Multan&count=1&language=en&format=json "HTTP/1.1 200 OK"
+2026-08-17 13:07:36,387 | INFO     | httpx | HTTP Request: GET https://api.open-meteo.com/v1/forecast?latitude=30.19679&longitude=71.47824&current=temperature_2m%2Crelative_humidity_2m%2Capparent_temperature%2Cis_day%2Cprecipitation%2Cweather_code%2Cwind_speed_10m%2Cwind_direction_10m&timezone=auto "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:53877 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 13:07:36,879 | INFO     | mcp.server.streamable_http | Terminating session: 0dc0e8544aca49d5ba5cf400beee1535
+INFO:     127.0.0.1:53878 - "DELETE /mcp HTTP/1.1" 200 OK
+2026-08-17 13:08:00,136 | INFO     | mcp.server.streamable_http_manager | Created new transport with session ID: 967586b65e854c4197a5231c092c99dc
+INFO:     127.0.0.1:53886 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53887 - "POST /mcp HTTP/1.1" 202 Accepted
+INFO:     127.0.0.1:53888 - "GET /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53889 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 13:08:00,169 | INFO     | mcp.server.streamable_http | Terminating session: 967586b65e854c4197a5231c092c99dc
+INFO:     127.0.0.1:53890 - "DELETE /mcp HTTP/1.1" 200 OK
+2026-08-17 13:08:02,023 | INFO     | mcp.server.streamable_http_manager | Created new transport with session ID: e1968ab7146d40d49c422623f73a09b2
+INFO:     127.0.0.1:53891 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53892 - "POST /mcp HTTP/1.1" 202 Accepted
+INFO:     127.0.0.1:53893 - "GET /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53894 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 13:08:03,764 | INFO     | httpx | HTTP Request: GET https://geocoding-api.open-meteo.com/v1/search?name=Multan&count=1&language=en&format=json "HTTP/1.1 200 OK"
+2026-08-17 13:08:05,064 | INFO     | httpx | HTTP Request: GET https://api.open-meteo.com/v1/forecast?latitude=30.19679&longitude=71.47824&current=temperature_2m%2Crelative_humidity_2m%2Capparent_temperature%2Cis_day%2Cprecipitation%2Cweather_code%2Cwind_speed_10m%2Cwind_direction_10m&timezone=auto "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:53897 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 13:08:05,523 | INFO     | mcp.server.streamable_http | Terminating session: e1968ab7146d40d49c422623f73a09b2
+INFO:     127.0.0.1:53898 - "DELETE /mcp HTTP/1.1" 200 OK
+2026-08-17 13:08:40,928 | INFO     | mcp.server.streamable_http_manager | Created new transport with session ID: da95a88a5c7e4a899299bdd55e90d176
+INFO:     127.0.0.1:53908 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53909 - "POST /mcp HTTP/1.1" 202 Accepted
+INFO:     127.0.0.1:53910 - "GET /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53911 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 13:08:41,062 | INFO     | mcp.server.streamable_http | Terminating session: da95a88a5c7e4a899299bdd55e90d176
+INFO:     127.0.0.1:53912 - "DELETE /mcp HTTP/1.1" 200 OK
+2026-08-17 13:08:42,091 | INFO     | mcp.server.streamable_http_manager | Created new transport with session ID: 6fa9191e85654e1690b7a5e40631b3b9
+INFO:     127.0.0.1:53913 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53914 - "POST /mcp HTTP/1.1" 202 Accepted
+INFO:     127.0.0.1:53915 - "GET /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53916 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 13:08:43,176 | INFO     | httpx | HTTP Request: GET https://geocoding-api.open-meteo.com/v1/search?name=Multan&count=1&language=en&format=json "HTTP/1.1 200 OK"
+2026-08-17 13:08:44,248 | INFO     | httpx | HTTP Request: GET https://api.open-meteo.com/v1/forecast?latitude=30.19679&longitude=71.47824&current=temperature_2m%2Crelative_humidity_2m%2Capparent_temperature%2Cis_day%2Cprecipitation%2Cweather_code%2Cwind_speed_10m%2Cwind_direction_10m&timezone=auto "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:53919 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 13:08:44,689 | INFO     | mcp.server.streamable_http | Terminating session: 6fa9191e85654e1690b7a5e40631b3b9
+INFO:     127.0.0.1:53920 - "DELETE /mcp HTTP/1.1" 200 OK
+2026-08-17 13:09:15,746 | INFO     | mcp.server.streamable_http_manager | Created new transport with session ID: bcbaaad9e33d480193e528899bc69473
+INFO:     127.0.0.1:53927 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53928 - "POST /mcp HTTP/1.1" 202 Accepted
+INFO:     127.0.0.1:53929 - "GET /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53930 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 13:09:15,792 | INFO     | mcp.server.streamable_http | Terminating session: bcbaaad9e33d480193e528899bc69473
+INFO:     127.0.0.1:53931 - "DELETE /mcp HTTP/1.1" 200 OK
+2026-08-17 13:09:17,244 | INFO     | mcp.server.streamable_http_manager | Created new transport with session ID: 529ea12ad20349678b798209d65b7f5b
+INFO:     127.0.0.1:53933 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53934 - "POST /mcp HTTP/1.1" 202 Accepted
+INFO:     127.0.0.1:53935 - "GET /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53936 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 13:09:18,187 | INFO     | httpx | HTTP Request: GET https://geocoding-api.open-meteo.com/v1/search?name=Multan&count=1&language=en&format=json "HTTP/1.1 200 OK"
+2026-08-17 13:09:19,407 | INFO     | httpx | HTTP Request: GET https://api.open-meteo.com/v1/forecast?latitude=30.19679&longitude=71.47824&current=temperature_2m%2Crelative_humidity_2m%2Capparent_temperature%2Cis_day%2Cprecipitation%2Cweather_code%2Cwind_speed_10m%2Cwind_direction_10m&timezone=auto "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:53939 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 13:09:19,726 | INFO     | mcp.server.streamable_http | Terminating session: 529ea12ad20349678b798209d65b7f5b
+INFO:     127.0.0.1:53940 - "DELETE /mcp HTTP/1.1" 200 OK
+2026-08-17 13:09:44,657 | INFO     | mcp.server.streamable_http_manager | Created new transport with session ID: c1de1acda80845ba859d3badedef9a1f
+INFO:     127.0.0.1:53950 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53951 - "POST /mcp HTTP/1.1" 202 Accepted
+INFO:     127.0.0.1:53952 - "GET /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53953 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 13:09:44,707 | INFO     | mcp.server.streamable_http | Terminating session: c1de1acda80845ba859d3badedef9a1f
+INFO:     127.0.0.1:53954 - "DELETE /mcp HTTP/1.1" 200 OK
+2026-08-17 13:09:45,976 | INFO     | mcp.server.streamable_http_manager | Created new transport with session ID: 272cccb8abbe445696babaaad118529e
+INFO:     127.0.0.1:53955 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53956 - "POST /mcp HTTP/1.1" 202 Accepted
+INFO:     127.0.0.1:53957 - "GET /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53958 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 13:09:47,290 | INFO     | httpx | HTTP Request: GET https://geocoding-api.open-meteo.com/v1/search?name=Multan&count=1&language=en&format=json "HTTP/1.1 200 OK"
+2026-08-17 13:09:48,489 | INFO     | httpx | HTTP Request: GET https://api.open-meteo.com/v1/forecast?latitude=30.19679&longitude=71.47824&current=temperature_2m%2Crelative_humidity_2m%2Capparent_temperature%2Cis_day%2Cprecipitation%2Cweather_code%2Cwind_speed_10m%2Cwind_direction_10m&timezone=auto "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:53961 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 13:09:48,932 | INFO     | mcp.server.streamable_http | Terminating session: 272cccb8abbe445696babaaad118529e
+INFO:     127.0.0.1:53962 - "DELETE /mcp HTTP/1.1" 200 OK
+2026-08-17 13:10:58,770 | INFO     | mcp.server.streamable_http_manager | Created new transport with session ID: 36bc49c5174c431cab97aac5b7759e64
+INFO:     127.0.0.1:53971 - "POST /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53972 - "POST /mcp HTTP/1.1" 202 Accepted
+INFO:     127.0.0.1:53973 - "GET /mcp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53974 - "POST /mcp HTTP/1.1" 200 OK
+2026-08-17 13:10:58,939 | INFO     | mcp.server.streamable_http | Terminating session: 36bc49c5174c431cab97aac5b7759e64
+INFO:     127.0.0.1:53975 - "DELETE /mcp HTTP/1.1" 200 OK

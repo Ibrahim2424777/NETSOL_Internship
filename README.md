@@ -28,11 +28,15 @@ Load a conversation   ─────────▶ Redis cache-aside,
 - **Redis is a cache only** — active conversation messages (fast retrieval, 1-hour sliding TTL) and refresh-token
   session state (rotation-based revocation). It is never the only copy of anything.
 - **Every chat message passes through one LangGraph graph**, not a direct Gemini call. A router node decides the
-  path first, then the graph conditionally branches: `messages → [router] → ([retriever (RAG)] | [web search] |
-  nothing) → [model] → END`, backed by a Postgres-persisted LangGraph checkpointer — `chat_id` doubles as the
+  path first, then the graph conditionally branches: `messages → [router] → ([retriever (RAG)] → [model] |
+  [web_search] | [agent]) → END`, backed by a Postgres-persisted LangGraph checkpointer — `chat_id` doubles as the
   LangGraph `thread_id`, so conversation memory survives page refreshes *and* backend restarts, not just
   in-process state. See [Intelligent routing](#intelligent-routing) below for how normal/RAG are chosen, and
   [Web search](#web-search) for why that third route is a user toggle, not something the router infers.
+- **The "normal" route can call real tools.** `[agent]` (`app/langgraph/nodes/agent_node.py`) gives the model
+  access to weather and (if configured) email tools exposed by a standalone MCP server — the model itself decides
+  when a tool is needed via native function-calling, never a hardcoded keyword match. See
+  [MCP Integration & Tool-Calling](#mcp-integration--tool-calling) below.
 - **The model provider is abstracted** behind a `ModelService` interface, and is itself fallback-capable: Gemini
   is primary for routing/normal/RAG, and a transient Gemini failure (rate limit/quota/service-unavailable)
   automatically retries the same request on Groq before the user ever sees an error. See
@@ -44,6 +48,7 @@ Load a conversation   ─────────▶ Redis cache-aside,
 |---|---|
 | **Backend** | Python, FastAPI, LangGraph (+ Postgres checkpointer), Google Gemini API, Groq API (fallback + web search via compound-mini), PostgreSQL, Redis, LanceDB (vector store), fastembed, SQLAlchemy (async), Alembic, Pydantic, JWT, Google OAuth 2.0 |
 | **Frontend** | React 19, TypeScript, Bootstrap 5 (custom dark theme), React Router, Axios, TanStack Query (React Query) |
+| **MCP Server** | Python, official MCP SDK (`mcp`), Streamable HTTP, Open-Meteo (weather), Gmail API (email) — a standalone project the chatbot backend calls as an MCP client; see [MCP Integration & Tool-Calling](#mcp-integration--tool-calling) below |
 
 ## Project structure
 
@@ -55,7 +60,8 @@ backend/
     config/          Settings (env vars) and logging setup
     core/            Windows event-loop fix for the Postgres checkpointer driver
     database/        SQLAlchemy engine/session, ORM models, repositories
-    langgraph/       Graph state, nodes (router/retriever/web_search/model), the unified chat graph builder
+    langgraph/       Graph state, nodes (router/retriever/web_search/model/agent), the unified chat graph builder
+    mcp/             MCP client (app/mcp/client.py) - discovers/calls tools on the standalone MCP server
     middleware/      Request logging, request-ID correlation, security headers
     rag/             Document ingestion pipeline + reusable RAG retriever
     redis/           Redis client, active-conversation cache
@@ -74,6 +80,11 @@ frontend/
     pages/           Landing, Login, Chat, Profile, 404, OAuth callback
     routes/          Route definitions, protected-route guard
     services/        Axios client, auth token store, typed API calls, SSE stream parsing
+mcp-server/          Standalone MCP server (weather + email tools) - separate project, own deps/venv.
+  app/               config.py + weather/ (Open-Meteo) + email/ (Gmail API) - see mcp-server/README.md
+  scripts/           gmail_authorize.py - one-time interactive Gmail OAuth setup
+  server.py          Entry point (Streamable HTTP)
+  tests/             Unit + HTTP-error + live-network tests
 ```
 
 ## Prerequisites
@@ -190,6 +201,8 @@ confirm everything is wired up correctly:
 | `RAG_VECTOR_DB_PATH` / `RAG_EMBEDDING_MODEL` | No | `./data/vector_store` / `BAAI/bge-small-en-v1.5` | LanceDB directory + fastembed model |
 | `RAG_TOP_K` / `RAG_MIN_SCORE` | No | `4` / `0.6` | Chunks retrieved per query / minimum relevance to count as a match |
 | `ROUTER_CONTEXT_MESSAGES` | No | `6` | How many recent messages the router's classification call sees |
+| `MCP_SERVER_URL` | No | `http://127.0.0.1:8100/mcp` | The standalone MCP server's Streamable HTTP endpoint (separate process, `mcp-server/`) — see [MCP Integration & Tool-Calling](#mcp-integration--tool-calling) |
+| `MCP_REQUEST_TIMEOUT_SECONDS` | No | `15` | Timeout for MCP tool discovery/calls; not required for the app to start — if unreachable, the "normal" route degrades to tool-free chat |
 
 Full list with inline explanations: [`backend/.env.example`](backend/.env.example).
 
@@ -277,9 +290,11 @@ The chat graph's router node decides, per message, whether a turn needs document
   `normal` and `rag` on its own. This was a deliberate design choice, not a limitation: a wrong *inferred* search
   would burn Groq quota on every ambiguous message, while a wrong classification between normal/RAG just means a
   slightly less-grounded (but still relevant) answer.
-- **The graph:** `messages → [router] →` a conditional edge to `[retriever]`, `[web_search]`, or straight to
-  `[model]`. The `rag`/`normal` branches converge on the shared model node (`[model] → END`); `web_search` does
-  **not** — see [Web search](#web-search) for why.
+- **The graph:** `messages → [router] →` a conditional edge to `[retriever]`, `[web_search]`, or `[agent]`
+  (normal). `rag` converges on the shared, tool-free `[model]` node (`[retriever] → [model] → END`); `web_search`
+  and `normal` each go straight to `END` from their own node — see [Web search](#web-search) and
+  [MCP Integration & Tool-Calling](#mcp-integration--tool-calling) for why `normal`'s node (`[agent]`) can call
+  tools while `rag`'s can't.
 - **No stale context across a route switch:** `retrieved_context` is a plain (non-appending) field in `ChatState`,
   so the router resets it to empty on *every* turn before picking a branch — without this, switching from a RAG
   question to a plain question mid-conversation would otherwise still carry the previous turn's document chunks
@@ -354,6 +369,123 @@ is now provider-independent, with Groq as an automatic fallback:
   signal; which *provider* handled a turn is logged server-side only (`LLM provider: gemini` / `LLM provider:
   groq`), never the API keys themselves.
 
+## MCP Integration & Tool-Calling
+
+A **standalone** [Model Context Protocol](https://modelcontextprotocol.io) server lives at
+[`mcp-server/`](mcp-server/) — its own project, own dependencies, own `.venv` — exposing weather and
+email tools. The chatbot backend connects to it as an MCP client and gives the model itself the
+ability to decide, mid-conversation, when calling one of those tools would produce a better answer:
+
+```
+Browser (React)          FastAPI/LangGraph                        MCP Server (mcp-server/,
+                                                                     separate process)
+                          [router] → normal → [agent]
+                                                 │
+                                                 ├─ 1. list available tools ────────▶ tools/list
+                                                 │
+                                                 ├─ 2. ask Gemini/Groq: "given the
+                                                 │      conversation + these tool
+                                                 │      schemas, respond or call
+                                                 │      a tool?"
+                                                 │
+                                                 ├─ 3. IF the model requests a
+                                                 │      tool call: execute it ─────▶ tools/call
+                                                 │      (weather: Open-Meteo,
+                                                 │       email: Gmail API)         ◀── result
+                                                 │      feed the result back to
+                                                 │      the model, repeat from 2
+                                                 │      (up to 5 rounds)
+                                                 │
+                          ◀── final natural-language reply, "typed" in via SSE ────┘
+```
+
+### Architecture
+
+- **`app/mcp/client.py`** (`MCPClientService`) wraps the official `mcp` Python SDK's
+  `ClientSession` over Streamable HTTP — `list_tools()` (cached after the first call) and
+  `call_tool(name, arguments)`. It's the only place in the backend that knows the MCP server exists;
+  everything else depends on plain Python types (`ToolSpec`/`ToolCall`/`ToolExchange` in
+  `app/services/model_service.py`), not the MCP SDK's own shapes.
+- **`app/langgraph/nodes/agent_node.py`** replaces `model_node.py` for the "normal" route only (RAG
+  still uses `model_node.py` unchanged, deliberately tool-free; web search still uses
+  `web_search_node.py` unchanged). It runs the request → execute → respond loop above, capped at 5
+  round-trips as a safety limit against a runaway tool-calling conversation.
+- **The model decides, not the code.** `agent_node.py` never inspects the user's message for
+  keywords like "weather" or "email" — it hands the model the tool schemas MCP itself advertises and
+  lets Gemini's/Groq's own native function-calling decide whether and which tool to call. A plain
+  "hi, how are you?" gets a normal, tool-free reply on the first round-trip, same as before this
+  phase.
+- **Both providers, via the same interface.** `ModelService.generate_with_tools()` is a new
+  provider-agnostic method (alongside the existing `generate()`/`generate_stream()`/`classify()`)
+  implemented natively by both `GeminiService` (Google's function-calling) and `GroqService`
+  (OpenAI-compatible tool-calling) — `FallbackModelService` wraps it exactly like the other methods,
+  so a mid-tool-call Gemini quota/rate-limit failure transparently falls back to Groq, verified live.
+- **Deliberately non-streaming.** Whether a given model turn is "call a tool" or "here's my answer"
+  can't be known until the model finishes deciding, so `generate_with_tools()` is a single blocking
+  call rather than a token stream. Once a final answer is reached, its complete text is re-chunked
+  into small word-batches with a short delay between them (`agent_node.py`'s `_fake_stream()`) so the
+  frontend still gets the same typing-effect UI as a real stream — the same tradeoff
+  `web_search_node.py` already made for Groq's compound-mini.
+- **A real Gemini quirk found and fixed:** `gemini-3.5-flash` is a "thinking" model that requires its
+  own `thought_signature` (an opaque reasoning-trace token attached to each function-call response
+  part) to be captured and replayed on the *next* call when a turn involves more than one tool
+  round-trip — omitting it works for a single exchange but fails a real 2-tool-offered conversation
+  with `400 INVALID_ARGUMENT: Function call is missing a thought_signature`. Fixed by threading it
+  through as opaque `ToolCall.provider_data` (`GroqService` never sets or reads this field — the
+  difference is isolated inside Gemini's own implementation, not leaked into `agent_node.py`).
+  Verified live: a real 2-round-trip weather exchange through the full chat graph, no fallback
+  needed, completed correctly after the fix.
+- **Graceful degradation if the MCP server is down.** `agent_node.py` catches connection failures
+  from `list_tools()` and falls back to `tools=[]`, which routes to plain `generate_stream()` — real
+  token streaming resumes and normal chat keeps working, the model just can't use tools that turn.
+  Verified live (pointed the client at an unreachable port): the model gives an honest "I don't have
+  access to real-time information" answer instead of erroring.
+
+### Available tools
+
+| Tool | What it does | Backing provider |
+|---|---|---|
+| `get_current_weather(location)` | Current conditions (temperature, feels-like, condition, humidity, wind, precipitation) | Open-Meteo (no API key) |
+| `get_weather_forecast(location, date_str)` | Forecast for one specific date, up to 15 days out | Open-Meteo (no API key) |
+| `send_email(to, subject, body)` | Sends a plain-text email from a configured Gmail account (`to="me"` resolves to the account owner) | Gmail API (OAuth) |
+| `list_recent_emails(limit)` | Metadata only (sender/subject/snippet/date) for recent inbox messages | Gmail API (OAuth) |
+| `read_email(message_id)` | Full plain-text body + headers for one message | Gmail API (OAuth) |
+
+Email tools are optional — the server (and this integration) work fine with weather only if Gmail
+isn't configured. Full tool descriptions, Gmail OAuth setup (a one-time `scripts/gmail_authorize.py`
+run, separate from the chatbot's own Google login), and example calls: [`mcp-server/README.md`](mcp-server/README.md).
+
+### Example interaction
+
+```
+User:      "Email me tomorrow's weather in Multan."
+Assistant: [calls get_weather_forecast(location="Multan", date_str="2026-08-18")]
+           [describes the draft: recipient "you", subject, and a body summarizing the forecast,
+            and asks the user to confirm before sending — send_email's own tool description
+            instructs the model to get confirmation first, since the server has no UI of its own
+            to do this]
+User:      "Yes, send it."
+Assistant: [calls send_email(to="me", subject="...", body="...")]
+           "Sent! ..."
+```
+
+### Privacy: tool results never become long-term memory
+
+An email's contents, or a `send_email` confirmation exchange, live only in `agent_node.py`'s local
+`exchanges` list for the duration of that one turn — never written to `ChatState`, never checkpointed
+by LangGraph's Postgres saver. Only the user's original message (already in state before the node
+runs) and the model's *final* natural-language reply are persisted — whatever the model chooses to
+restate in that reply is far more minimal than a raw tool result, and the system instructions nudge
+it to stay that way. This falls out of the loop's structure rather than needing per-message redaction
+logic: nothing about how a turn is checkpointed changed, tool exchanges simply never enter that path.
+
+### Frontend indicator
+
+A small pill next to the "Assistant" label (e.g. "☁ Checked the weather") appears on replies where
+`agent_node.py` actually called a tool — `tools_used` travels on the `done` SSE event
+(`app/api/v1/endpoints/messages.py`) exactly like the existing route indicator, and is never
+persisted (a page refresh loses it, same as route).
+
 ## Security notes
 
 - Google's identity is verified server-side on every login; the frontend never trusts a token from Google
@@ -371,6 +503,16 @@ is now provider-independent, with Groq as an automatic fallback:
 
 Honest gaps, not silently left undocumented:
 
+- **Email tool-calling is implemented and unit-tested but not yet live-verified end-to-end** — it
+  needs a one-time real Gmail OAuth authorization (`mcp-server/scripts/gmail_authorize.py`) that
+  hasn't been run yet in this environment. Weather tool-calling *has* been verified live through the
+  full chat graph (including the Gemini `thought_signature` multi-round-trip fix and Gemini→Groq
+  fallback mid-tool-call); email uses the identical code path, just with different tool schemas.
+- **RAG wasn't re-verified live after the Phase 17 graph restructuring** (the "normal" route moved
+  from `model_node.py` to the new `agent_node.py`) — low risk since `retriever_node.py`/
+  `model_node.py` and the RAG conditional edge are byte-for-byte unchanged, but it's a code-review
+  conclusion, not a live-tested one, unlike web_search and MCP-down degradation which were both
+  re-verified live this phase.
 - **Chat titles don't auto-generate.** Every new chat starts as "New Chat" until manually renamed — there's no
   equivalent of deriving a title from the first message.
 - **Web search only ever runs on explicit user request**, never inferred — a message that would clearly benefit
@@ -379,7 +521,19 @@ Honest gaps, not silently left undocumented:
   feature's value depends on user awareness of the toggle.
 - **`groq/compound` (the larger, non-mini web search model) is unreliable as of this writing** — it returned a
   live `413 Request Entity Too Large` on ordinary prompts in testing, reproduced twice. `groq/compound-mini` is
-  used instead and has been reliable, but this is worth re-checking if `GROQ_COMPOUND_MODEL` is ever changed.
+  used instead, but **it can hit the same `413`/bare `groq.APIError` on individual high-traffic queries** — a live
+  "latest [ongoing sports event] result" query reproduced this reliably across 10+ consecutive attempts, not just
+  intermittently as earlier testing suggested. Investigated live: Groq's compound API has no documented parameter
+  to cap the number of search results or fetched content size (`search_settings` only supports
+  `country`/`include_domains`/`exclude_domains`); restricting `compound_custom.tools.enabled_tools` to `web_search`
+  only (excluding `visit_website`, which fetches full raw pages) was tried and confirmed live **not** to fix it —
+  the oversized payload appears to originate from Groq's own search-result assembly, not page-visiting.
+  `GroqService` now retries a bare in-band `groq.APIError` up to `_COMPOUND_RETRY_ATTEMPTS` (3) times before
+  giving up and letting `FallbackModelService` fall through to Gemini — for most queries this recovers, but a
+  handful of very high-traffic topics can exhaust all retries. When that happens *and* Gemini's own fallback is
+  simultaneously unavailable (e.g. quota-exhausted), the turn fails with the standard generic SSE error. No
+  further mitigation was pursued — Gemini fallback (when its own quota isn't exhausted) is what actually absorbs
+  this in normal operation.
 - **No automated test suite.** Every phase of this project was verified manually (including live browser
   testing via Playwright) rather than with a committed test suite — there's nothing to run in CI yet.
 - **No Docker / docker-compose setup.** Each service (Postgres, Redis, backend, frontend) is run directly;

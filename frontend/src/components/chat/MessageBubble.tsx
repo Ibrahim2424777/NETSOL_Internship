@@ -1,7 +1,7 @@
 import { Suspense, lazy, memo } from 'react';
 
 import type { Message } from '../../types';
-import { DocumentIcon, GlobeIcon } from '../icons';
+import { CloudIcon, DocumentIcon, GlobeIcon, MailIcon, SparkleIcon } from '../icons';
 
 // Lazy-loaded: react-markdown + remark-gfm + react-syntax-highlighter (with
 // its language grammars) are the single heaviest dependency in this app,
@@ -15,6 +15,30 @@ interface MessageBubbleProps {
   // True only for the single assistant message currently streaming in -
   // shows a blinking cursor at the end, removed once it's finalized.
   isStreaming?: boolean;
+}
+
+// Maps MCP tool names (agent_node.py's tools_used) to a short, human label
+// and icon for the tool-use indicator (Phase 17 doc section 20 - "small
+// polished indicator", not a raw list of function names). Grouped by
+// category (weather/email) rather than shown per-tool, so e.g. a turn that
+// called both get_current_weather and get_weather_forecast still shows one
+// chip, not two identical-looking "weather" chips.
+const TOOL_CATEGORIES: { label: string; icon: typeof CloudIcon; tools: string[] }[] = [
+  { label: 'Checked the weather', icon: CloudIcon, tools: ['get_current_weather', 'get_weather_forecast'] },
+  { label: 'Sent an email', icon: MailIcon, tools: ['send_email'] },
+  { label: 'Checked your email', icon: MailIcon, tools: ['list_recent_emails', 'read_email'] },
+];
+
+function toolIndicators(toolsUsed: string[]): { label: string; icon: typeof CloudIcon }[] {
+  const used = new Set(toolsUsed);
+  const indicators: { label: string; icon: typeof CloudIcon }[] = TOOL_CATEGORIES.filter((category) =>
+    category.tools.some((tool) => used.has(tool)),
+  ).map(({ label, icon }) => ({ label, icon }));
+  const known = new Set(TOOL_CATEGORIES.flatMap((category) => category.tools));
+  if (toolsUsed.some((tool) => !known.has(tool))) {
+    indicators.push({ label: 'Used a tool', icon: SparkleIcon });
+  }
+  return indicators;
 }
 
 // User messages render as a right-aligned gradient bubble (a human typing a
@@ -44,6 +68,8 @@ function MessageBubble({ message, isStreaming = false }: MessageBubbleProps) {
     );
   }
 
+  const indicators = message.toolsUsed && message.toolsUsed.length > 0 ? toolIndicators(message.toolsUsed) : [];
+
   return (
     <div className="mb-4 message-enter" style={{ maxWidth: '75ch' }}>
       <div className="d-flex align-items-center gap-2 mb-2">
@@ -51,6 +77,12 @@ function MessageBubble({ message, isStreaming = false }: MessageBubbleProps) {
           ✦
         </span>
         <span className="small fw-medium text-secondary">Assistant</span>
+        {indicators.map(({ label, icon: Icon }) => (
+          <span className="tool-use-chip d-inline-flex align-items-center gap-1" key={label}>
+            <Icon className="flex-shrink-0" />
+            {label}
+          </span>
+        ))}
       </div>
       <div className="message-bubble-assistant ps-1">
         <Suspense fallback={<span style={{ whiteSpace: 'pre-wrap' }}>{message.content}</span>}>

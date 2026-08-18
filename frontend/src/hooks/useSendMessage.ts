@@ -84,11 +84,17 @@ export function useSendMessage(chatId: string) {
               upsertDraft(draft);
             },
             onDone: (event) => {
-              // route is transient (Phase 14) - only ever known for the
-              // message just streamed in, so it's attached here rather than
-              // coming from the message object itself.
-              const message: Message =
-                event.route != null ? { ...event.message, route: event.route } : event.message;
+              // route/toolsUsed are transient (Phase 14 / Phase 17) - only
+              // ever known for the message just streamed in, so they're
+              // attached here rather than coming from the message object
+              // itself.
+              const message: Message = {
+                ...event.message,
+                ...(event.route != null ? { route: event.route } : {}),
+                ...(event.tools_used && event.tools_used.length > 0
+                  ? { toolsUsed: event.tools_used }
+                  : {}),
+              };
               queryClient.setQueryData<Message[]>(messageKeys.list(chatId), (old = []) => [
                 ...old.filter((m) => m.id !== DRAFT_MESSAGE_ID),
                 message,

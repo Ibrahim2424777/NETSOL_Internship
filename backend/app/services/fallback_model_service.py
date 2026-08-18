@@ -18,7 +18,15 @@ burns fallback-provider quota for nothing.
 import logging
 from collections.abc import AsyncIterator, Callable
 
-from app.services.model_service import ModelService, ModelTurn, ProviderUnavailableError, SearchCitation
+from app.services.model_service import (
+    ModelService,
+    ModelToolResponse,
+    ModelTurn,
+    ProviderUnavailableError,
+    SearchCitation,
+    ToolExchange,
+    ToolSpec,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -107,4 +115,33 @@ class FallbackModelService(ModelService):
             )
             result = await self._fallback.classify(history, instructions=instructions, choices=choices)
             logger.info("LLM provider (classify): %s", self._fallback_name)
+            return result
+
+    async def generate_with_tools(
+        self,
+        history: list[ModelTurn],
+        *,
+        tools: list[ToolSpec],
+        exchanges: list[ToolExchange] | None = None,
+    ) -> ModelToolResponse:
+        # Unlike generate_stream(), there's no "already sent output" guard
+        # needed here: `exchanges` is a plain, provider-agnostic list of
+        # (tool_call, result) pairs (see model_service.py), not any one
+        # provider's internal conversation state - the fallback provider can
+        # pick up mid-tool-loop and keep reasoning over the same exchanges
+        # without anything needing to be undone or re-sent to the user.
+        try:
+            result = await self._primary.generate_with_tools(history, tools=tools, exchanges=exchanges)
+            logger.info("LLM provider (tools): %s", self._primary_name)
+            return result
+        except ProviderUnavailableError:
+            if self._fallback is None:
+                raise
+            logger.warning(
+                "%s unavailable for generate_with_tools() - falling back to %s",
+                self._primary_name,
+                self._fallback_name,
+            )
+            result = await self._fallback.generate_with_tools(history, tools=tools, exchanges=exchanges)
+            logger.info("LLM provider (tools): %s", self._fallback_name)
             return result
